@@ -1,0 +1,17 @@
+{
+  "name": "React + TypeScript Provträning",
+  "short_name": "Provträning",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080d17",
+  "theme_color": "#0d1320",
+  "description": "Offline-vänlig provträning för React och TypeScript.",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

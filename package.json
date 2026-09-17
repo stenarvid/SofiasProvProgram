@@ -1,0 +1,34 @@
+{
+  "name": "react-typescript-provtraning",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run --environment jsdom"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.7",
+    "@tanstack/react-router": "^1.92.5",
+    "hono": "^4.6.14",
+    "jotai": "^2.10.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.1",
+    "zod": "^3.24.1",
+    "@monaco-editor/react": "^4.7.0",
+    "monaco-editor": "^0.52.2",
+    "react-live": "^4.1.8"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8",
+    "jsdom": "^25.0.1"
+  }
+}
