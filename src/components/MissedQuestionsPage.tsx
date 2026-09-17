@@ -1,3 +1,4 @@
+import { shuffleMultipleAnswers } from "../data/quizShuffle";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getAllMissedQuestions } from "../data/missedQuestions";
@@ -6,7 +7,7 @@ import { recordAnswer } from "../data/progress";
 import { isQuizSelectionCorrect } from "../data/studyPageQuiz";
 
 export default function MissedQuestionsPage() {
-  const [questions, setQuestions] = useState(() => getAllMissedQuestions());
+  const [questions, setQuestions] = useState(() => getAllMissedQuestions().map(question => shuffleMultipleAnswers(question)));
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number[]>([]);
   const [checked, setChecked] = useState(false);
@@ -48,7 +49,8 @@ export default function MissedQuestionsPage() {
         type: current.type,
         options: current.options,
         correctAnswers: current.correctAnswers,
-        explanation: current.explanation
+        explanation: current.explanation,
+        code: current.code
       }
     );
 
@@ -64,7 +66,7 @@ export default function MissedQuestionsPage() {
   }
 
   function restart() {
-    const remaining = getAllMissedQuestions();
+    const remaining = getAllMissedQuestions().map(question => shuffleMultipleAnswers(question));
     setQuestions(remaining);
     setIndex(0);
     setSelected([]);
@@ -113,7 +115,8 @@ export default function MissedQuestionsPage() {
           <span>Fel tidigare: {current.wrongCount}</span>
         </div>
 
-        <h2>{current.question}</h2>
+        <pre style={{ whiteSpace: "pre-wrap" }}>{current.question}</pre>
+        {current.code && <pre><code>{current.code}</code></pre>}
 
         {current.type === "multi" && !checked && (
           <p className="muted">

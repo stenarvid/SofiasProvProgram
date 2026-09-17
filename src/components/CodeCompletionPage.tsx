@@ -1,3 +1,4 @@
+import TrainingSession from "./TrainingSession";
 import { useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { configureCourseEditor } from "../data/monacoCourseTypes";
@@ -24,19 +25,26 @@ function Counter() {
     title: "Fyll i fetch",
     code: `async function getUsers() {
   // TODO: hämta /api/users
-  // TODO: returnera JSON
+  // TODO: kontrollera response.ok och returnera JSON
 }`,
     solution: `const response = await fetch("/api/users");
+if (!response.ok) throw new Error("Kunde inte hämta användare");
 return await response.json();`
   },
   {
     topic: "Router",
     title: "Fyll i Route",
-    code: `function App() {
+    code: `import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+function About() { return <h1>Om oss</h1>; }
+
+function App() {
   return (
+    <BrowserRouter>
     <Routes>
       {/* TODO: /about ska visa <About /> */}
     </Routes>
+    </BrowserRouter>
   );
 }`,
     solution: `<Route path="/about" element={<About />} />`
@@ -44,7 +52,9 @@ return await response.json();`
   {
     topic: "Zod",
     title: "Fyll i valideringen",
-    code: `const schema = z.object({
+    code: `import { z } from "zod";
+
+const schema = z.object({
   name: // TODO: string minst 2 tecken,
   email: // TODO: giltig email
 });`,
@@ -54,22 +64,22 @@ email: z.string().email()`
 ];
 
 export default function CodeCompletionPage() {
-  const [index, setIndex] = useState(0);
-  const [code, setCode] = useState(tasks[0].code);
+  return <TrainingSession items={tasks} topics={(item) => [item.topic]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, index, nextTask }: { item: (typeof tasks)[number]; index: number; nextTask: () => void }) {
+  const [code, setCode] = useState(source.code);
   const [show, setShow] = useState(false);
 
-  const task = tasks[index];
+  const task = source;
 
   const handleEditorMount: OnMount = (editor, monaco) => {
     configureCourseEditor(editor, monaco);
   };
 
-  function next() {
-    const nextIndex = (index + 1) % tasks.length;
-    setIndex(nextIndex);
-    setCode(tasks[nextIndex].code);
-    setShow(false);
-  }
+  const next = nextTask;
 
   return (
     <section className="coding-page">

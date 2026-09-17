@@ -1,20 +1,26 @@
+import TrainingSession from "./TrainingSession";
 import { useState } from "react";
 import { emitStudyFeedback } from "../data/audioSettings";
 
 const tasks = [
   { topic: "TypeScript", code: `const names: string[] = ["Anna", "Erik"];\nconsole.log(names.length);`, answer: "2", explanation: "Arrayen innehåller två element." },
   { topic: "JavaScript/React", code: `const count = 2;\nconsole.log(count + 1);`, answer: "3", explanation: "2 + 1 blir 3." },
-  { topic: "State", code: `const [open] = useState(false);\nconsole.log(open);`, answer: "false", explanation: "Startvärdet som skickas till useState är false." },
+  { topic: "State", code: `import { useState } from "react";\n\n// Vad loggas när React renderar Status första gången?\nfunction Status() {\n  const [open] = useState(false);\n  console.log(open);\n  return null;\n}`, answer: "false", explanation: "Startvärdet är false. useState anropas inuti en React-komponent, inte på modulnivå. I Strict Mode kan samma värde loggas mer än en gång under utveckling." },
   { topic: "TypeScript", code: `type Status = "idle" | "done";\nconst status: Status = "done";\nconsole.log(status);`, answer: "done", explanation: "Uniontypen begränsar värdet men ändrar inte vad som loggas." },
-  { topic: "Fetch", code: `const response = await fetch("/api/users");\nconsole.log(response.ok);`, answer: "Beror på HTTP-status", explanation: "response.ok är true för status 200–299 och false annars." },
+  { topic: "Fetch", code: `// Anta att servern svarar med HTTP 404.\nconst response = await fetch("/api/users");\nconsole.log(response.ok);`, answer: "false", explanation: "HTTP 404 ger response.ok === false. fetch rejectas inte enbart på grund av HTTP-fel. response.ok är true för status 200–299." },
   { topic: "Zod", code: `const result = z.string().min(2).safeParse("A");\nconsole.log(result.success);`, answer: "false", explanation: "Strängen har bara ett tecken och klarar inte min(2)." }
 ];
 
 export default function OutputPredictionPage() {
-  const [index, setIndex] = useState(0);
+  return <TrainingSession items={tasks} topics={(item) => [item.topic]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, nextTask }: { item: (typeof tasks)[number]; index: number; nextTask: () => void }) {
   const [guess, setGuess] = useState("");
   const [checked, setChecked] = useState(false);
-  const task = tasks[index];
+  const task = source;
   const correct = guess.trim().toLowerCase() === task.answer.toLowerCase();
 
   function check() {
@@ -22,11 +28,7 @@ export default function OutputPredictionPage() {
     emitStudyFeedback(correct ? "correct" : "wrong");
   }
 
-  function next() {
-    setIndex((value) => (value + 1) % tasks.length);
-    setGuess("");
-    setChecked(false);
-  }
+  const next = nextTask;
 
   return (
     <section className="learning-page">
@@ -38,7 +40,7 @@ export default function OutputPredictionPage() {
       <article className="explain-code-card">
         <span className="topic-badge">{task.topic}</span>
         <pre><code>{task.code}</code></pre>
-        <label>Ditt svar<input value={guess} onChange={(e) => setGuess(e.target.value)} /></label>
+        <label>Ditt svar<input value={guess} disabled={checked} onChange={(e) => setGuess(e.target.value)} /></label>
         {!checked ? (
           <button type="button" className="primary-button auto-width" onClick={check} disabled={!guess.trim()}>Rätta</button>
         ) : (

@@ -1,5 +1,6 @@
 import React, { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { flushSync } from "react-dom";
 import * as ts from "typescript";
 import { z } from "zod";
 import { Hono } from "hono";
@@ -78,6 +79,15 @@ function getNamedValue(js: string, name: string, scope: Record<string, unknown> 
   return fn(...argValues);
 }
 
+async function updateReact(callback: () => void) {
+  // React's test-only act() throws in production builds.
+  if (import.meta.env.PROD) {
+    flushSync(callback);
+  } else {
+    await act(async () => callback());
+  }
+}
+
 async function renderComponent(
   Component: React.ComponentType<any>,
   props: Record<string, unknown> = {}
@@ -86,7 +96,7 @@ async function renderComponent(
   document.body.appendChild(container);
   const root: Root = createRoot(container);
 
-  await act(async () => {
+  await updateReact(() => {
     root.render(React.createElement(Component, props));
   });
 
@@ -98,13 +108,13 @@ async function rerender(
   Component: React.ComponentType<any>,
   props: Record<string, unknown>
 ) {
-  await act(async () => {
+  await updateReact(() => {
     root.render(React.createElement(Component, props));
   });
 }
 
 async function click(element: HTMLElement) {
-  await act(async () => {
+  await updateReact(() => {
     element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
   });
 }
@@ -115,7 +125,7 @@ async function typeIntoInput(input: HTMLInputElement, value: string) {
     "value"
   )?.set;
 
-  await act(async () => {
+  await updateReact(() => {
     setter?.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.dispatchEvent(new Event("change", { bubbles: true }));
@@ -123,7 +133,7 @@ async function typeIntoInput(input: HTMLInputElement, value: string) {
 }
 
 async function cleanup(container: HTMLElement, root: Root) {
-  await act(async () => {
+  await updateReact(() => {
     root.unmount();
   });
   container.remove();
@@ -595,6 +605,28 @@ async function gradeHono(code: string): Promise<GradeResult> {
     { name: "POST matchar inte GET-routen", passed: postStatus >= 400, details: postStatus ? `POST-status: ${postStatus}.` : "Kunde inte testa POST." },
     { name: "Fel route ger inte 200", passed: wrongRouteStatus >= 400, details: wrongRouteStatus ? `Fel route-status: ${wrongRouteStatus}.` : "Kunde inte testa fel route." }
   ]);
+}
+
+export async function gradeHello(code: string): Promise<GradeResult> {
+  const { js, errors } = transpile(code);
+  const failed = compileFailure(errors);
+  if (failed) return failed;
+  let container: HTMLElement | null = null;
+  let root: Root | null = null;
+  try {
+    const component = getNamedValue(js, "Hello");
+    if (typeof component !== "function") return scoreTests([{ name: "Hello finns", passed: false, details: "Skriv en komponent som heter Hello." }]);
+    ({ container, root } = await renderComponent(component));
+    const heading = container.querySelector("h1");
+    return scoreTests([
+      { name: "h1 renderas", passed: Boolean(heading), details: "Hello ska returnera en synlig h1-rubrik." },
+      { name: "Texten Hej!", passed: heading?.textContent?.trim() === "Hej!", details: "Rubriken ska visa Hej!." }
+    ]);
+  } catch (error) {
+    return { score: 0, passed: false, tests: [], compileError: error instanceof Error ? error.message : "Hello kunde inte köras." };
+  } finally {
+    if (container && root) await cleanup(container, root);
+  }
 }
 
 export async function gradeExercise(exerciseId: string, code: string): Promise<GradeResult> {

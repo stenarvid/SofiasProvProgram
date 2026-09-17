@@ -1,3 +1,5 @@
+import TrainingSession from "./TrainingSession";
+import { shuffle } from "../data/quizShuffle";
 import { useState } from "react";
 
 const pairs = [
@@ -13,16 +15,23 @@ const pairs = [
 
 const meanings = pairs.map(([, meaning]) => meaning);
 
+const pairTopics = ["State", "Props", "React Query", "Hono", "Jotai", "Zod", "React Router", "Fetch"];
+const taggedPairs = pairs.map((pair, index) => ({ pair, topic: pairTopics[index] }));
+
 export default function MatchingPage() {
+  return <TrainingSession items={taggedPairs} topics={(item) => [item.topic]}>
+    {(item, _index, next) => <MatchingTask pair={item.pair} next={next} />}
+  </TrainingSession>;
+}
+
+function MatchingTask({ pair, next }: { pair: (typeof pairs)[number]; next: () => void }) {
+  const pairs = [pair];
+  const [options] = useState(() => shuffle(meanings));
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState(false);
 
   const score = pairs.filter(([term, meaning]) => answers[term] === meaning).length;
 
-  function reset() {
-    setAnswers({});
-    setChecked(false);
-  }
 
   return (
     <section>
@@ -40,12 +49,13 @@ export default function MatchingPage() {
             >
               <strong>{term}</strong>
               <select
+                aria-label={`Förklaring till ${term}`}
                 value={answers[term] ?? ""}
                 disabled={checked}
                 onChange={(e) => setAnswers((a) => ({ ...a, [term]: e.target.value }))}
               >
                 <option value="">Välj...</option>
-                {meanings.map((m) => <option key={m} value={m}>{m}</option>)}
+                {options.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
           );
@@ -53,14 +63,14 @@ export default function MatchingPage() {
       </div>
 
       {!checked ? (
-        <button type="button" className="primary-button" onClick={() => setChecked(true)}>
+        <button type="button" className="primary-button" disabled={!answers[pair[0]]} onClick={() => setChecked(true)}>
           Rätta
         </button>
       ) : (
         <>
-          <p className="result">Du fick {score} av {pairs.length} rätt.</p>
-          <button type="button" className="secondary-button" onClick={reset}>
-            Gör om
+          <p className="result">{score ? "Rätt!" : `Rätt förklaring: ${pair[1]}`}</p>
+          <button type="button" className="secondary-button" onClick={next}>
+            Nästa begrepp
           </button>
         </>
       )}

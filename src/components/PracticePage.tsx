@@ -1,3 +1,4 @@
+import TrainingSession from "./TrainingSession";
 import React, { useMemo, useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { LiveError, LivePreview, LiveProvider } from "react-live";
@@ -339,8 +340,13 @@ function makePreviewCode(code: string, preview?: PreviewConfig) {
 
 export default function PracticePage() {
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
-  const [index, setIndex] = useState(0);
-  const exercise = exercises[index];
+  return <TrainingSession items={exercises} topics={(item) => [item.topic]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} difficulty={difficulty} setDifficulty={setDifficulty} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, index, nextTask, difficulty, setDifficulty }: { item: (typeof exercises)[number]; index: number; nextTask: () => void; difficulty: Difficulty; setDifficulty: (difficulty: Difficulty) => void }) {
+  const exercise = source;
 
   const [code, setCode] = useState(getStarter(exercise, difficulty));
   const [showHints, setShowHints] = useState(false);
@@ -361,14 +367,7 @@ export default function PracticePage() {
     setGrade(null);
   }
 
-  function openExercise(nextIndex: number) {
-    const next = (nextIndex + exercises.length) % exercises.length;
-    setIndex(next);
-    setCode(getStarter(exercises[next], difficulty));
-    setShowHints(false);
-    setShowSolution(false);
-    setGrade(null);
-  }
+  const openExercise = nextTask;
 
   const handleMount: OnMount = (editor, monaco) => {
     configureCourseEditor(editor, monaco);
@@ -400,7 +399,6 @@ export default function PracticePage() {
       <div className="coding-header">
         <div>
           <span className="topic-badge">{exercise.topic}</span>
-          <span className="quiz-progress">Uppgift {index + 1} / {exercises.length}</span>
         </div>
 
         <label className="difficulty-control">
@@ -505,7 +503,7 @@ export default function PracticePage() {
           >
             {showSolution ? "Dölj facit" : "Visa facit"}
           </button>
-          <button type="button" className="primary-button auto-width" onClick={() => openExercise(index + 1)}>
+          <button type="button" className="primary-button auto-width" onClick={() => openExercise()}>
             Nästa uppgift
           </button>
         </div>

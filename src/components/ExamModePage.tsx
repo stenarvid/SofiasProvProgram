@@ -1,3 +1,4 @@
+import { shuffle } from "../data/quizShuffle";
 import { useEffect, useMemo, useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { configureCourseEditor } from "../data/monacoCourseTypes";
@@ -12,10 +13,6 @@ const practicalTasks = [
   "Skapa en Jotai-atom för count.",
   "Skapa en GET-route /api/hello i Hono."
 ];
-
-function shuffle<T>(items: T[]) {
-  return [...items].sort(() => Math.random() - 0.5);
-}
 
 export default function ExamModePage() {
   const [minutes, setMinutes] = useState(30);
@@ -83,7 +80,7 @@ export default function ExamModePage() {
         </div>
       )}
 
-      {(running || secondsLeft > 0) && (
+      {tasks.length > 0 && (
         <>
           <div className="exam-timer">{display}</div>
 
@@ -116,6 +113,7 @@ export default function ExamModePage() {
                         fontSize: 14,
                         lineHeight: 22,
                         automaticLayout: true,
+                        readOnly: !running,
                         quickSuggestions: true,
                         parameterHints: { enabled: true },
                         padding: { top: 12, bottom: 12 }
@@ -127,18 +125,18 @@ export default function ExamModePage() {
             </div>
           </div>
 
-          <button type="button" className="secondary-button" onClick={() => {
+          {running && <button type="button" className="secondary-button" onClick={() => {
             setRunning(false);
             setSecondsLeft(0);
           }}>
             Avsluta provläge
-          </button>
+          </button>}
         </>
       )}
 
       {!running && secondsLeft === 0 && tasks.length > 0 && (
         <div className="warning-box">
-          Provläget är avslutat. Gå tillbaka till kodövningarna och jämför dina lösningar.
+          Provläget är avslutat. Dina svar finns kvar ovan för jämförelse med kodövningarna. Ett nytt prov ersätter svaren.
         </div>
       )}
     </section>

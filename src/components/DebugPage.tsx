@@ -1,3 +1,4 @@
+import TrainingSession from "./TrainingSession";
 import { useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { configureCourseEditor } from "../data/monacoCourseTypes";
@@ -84,29 +85,28 @@ function UserCard({ name, age }: Props) {
 ];
 
 export default function DebugPage() {
-  const [index, setIndex] = useState(0);
-  const [code, setCode] = useState(exercises[0].code);
+  return <TrainingSession items={exercises} topics={(item) => [item.topic]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, index, nextTask }: { item: (typeof exercises)[number]; index: number; nextTask: () => void }) {
+  const [code, setCode] = useState(source.code);
   const [show, setShow] = useState(false);
 
-  const exercise = exercises[index];
+  const exercise = source;
 
   const handleEditorMount: OnMount = (editor, monaco) => {
     configureCourseEditor(editor, monaco);
   };
 
-  function go(next: number) {
-    const i = (next + exercises.length) % exercises.length;
-    setIndex(i);
-    setCode(exercises[i].code);
-    setShow(false);
-  }
+  const go = nextTask;
 
   return (
     <section className="coding-page">
       <div className="coding-header">
         <div>
           <span className="topic-badge">{exercise.topic}</span>
-          <span className="quiz-progress">Debug {index + 1} / {exercises.length}</span>
         </div>
       </div>
 
@@ -131,7 +131,7 @@ export default function DebugPage() {
           <button type="button" onClick={() => setShow((v) => !v)}>
             {show ? "Dölj förklaring" : "Visa lösning & förklaring"}
           </button>
-          <button type="button" className="primary-button auto-width" onClick={() => go(index + 1)}>
+          <button type="button" className="primary-button auto-width" onClick={() => go()}>
             Nästa debug-uppgift
           </button>
         </div>

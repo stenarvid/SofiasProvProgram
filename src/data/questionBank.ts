@@ -1,3 +1,6 @@
+import { studyTopics } from "./studyTopics";
+import { studyLessons } from "./studyLessons";
+
 export type QuizQuestion = {
   id: string;
   topic: string;
@@ -7,7 +10,7 @@ export type QuizQuestion = {
   explanation: string;
 };
 
-export const questionBank: QuizQuestion[] = [
+const foundationQuestions: QuizQuestion[] = [
   { id: "q001", topic: "React", question: "Vad är React?", options: ["Ett bibliotek för att bygga användargränssnitt", "En databas", "Ett backend-framework", "Ett operativsystem"], answer: 0, explanation: "React används för att bygga UI med komponenter." },
   { id: "q002", topic: "React", question: "Vad används JSX till?", options: ["Att skriva HTML-liknande syntax i JS/TS", "Att skapa databaser", "Att validera formulär", "Att skriva API-routes"], answer: 0, explanation: "JSX beskriver UI med HTML-liknande syntax." },
   { id: "q003", topic: "React", question: "Vad betyder deklarativ UI-kod?", options: ["Du beskriver hur UI:t ska se ut utifrån data", "Du manipulerar alltid DOM manuellt", "React kör bara på servern", "React använder inte JS"], answer: 0, explanation: "React uppdaterar UI utifrån state och props." },
@@ -64,4 +67,20 @@ export const questionBank: QuizQuestion[] = [
   { id: "q054", topic: "Server", question: "Vad är en HTTP request?", options: ["Anrop från klient till server", "React render", "TypeScript-typ", "Atom"], answer: 0, explanation: "Klienten skickar request till servern." },
   { id: "q055", topic: "Server", question: "Vad är en HTTP response?", options: ["Svaret från servern", "Lokalt state", "Route-komponent", "Prop"], answer: 0, explanation: "Servern skickar response tillbaka." },
   { id: "q056", topic: "Server", question: "Vad är en API-endpoint?", options: ["En URL + HTTP-metod som servern hanterar", "En JSX-tag", "En type", "En atom"], answer: 0, explanation: "En endpoint syftar normalt på en kombination av HTTP-metod och route/path som servern hanterar, till exempel GET /api/users." }
+];
+
+// Keep existing IDs so saved progress remains valid. Add application questions
+// with their own IDs rather than silently changing what an old score measures.
+export const questionBank: QuizQuestion[] = [
+  ...foundationQuestions,
+  ...studyTopics.flatMap(topic => topic.pages.flatMap(page =>
+    (studyLessons[page.id]?.questions ?? []).map(([question, correct, ...rest], index) => ({
+      id: `applied-${page.id}-${index + 1}`,
+      topic: topic.title,
+      question: `${question}\n\n${studyLessons[page.id].code}`,
+      options: [correct, ...rest.slice(0, 3)],
+      answer: 0,
+      explanation: rest[3]
+    }))
+  ))
 ];

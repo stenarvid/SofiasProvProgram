@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { lessonReadingQuestions, type LessonSource } from "../data/lessonTraining";
+import TrainingLessonSource from "./TrainingLessonSource";
+import TrainingSession from "./TrainingSession";
+import { shuffleQuestionOptions } from "../data/quizShuffle";
+import { useMemo, useState } from "react";
 
-const tasks = [
+const tasks: (Partial<LessonSource> & { topic: string; code: string; options: string[]; answer: number; explanation: string; question: string; context?: string })[] = [
   {
     topic: "State",
     code: `function Counter() {
@@ -24,7 +28,7 @@ const tasks = [
 }
 
 <Greeting name="Alex" />`,
-    question: "Vad renderas?",
+    question: "Vilken text visas när React renderar <Greeting name=\"Alex\" /> i komponentträdet?",
     options: ["Hej Alex!", "Hej name!", "Alex", "Ingenting"],
     answer: 0,
     explanation: "Prop-en name har värdet Alex och sätts in i JSX."
@@ -37,7 +41,7 @@ const tasks = [
 };
 
 const user: User = { name: "Kim" };`,
-    question: "Är objektet giltigt?",
+    question: "Klarar objektet TypeScripts typkontroll mot User?",
     options: ["Ja", "Nej, age saknas", "Nej, name måste vara number"],
     answer: 0,
     explanation: "age har ?, alltså är den valfri."
@@ -46,34 +50,37 @@ const user: User = { name: "Kim" };`,
     topic: "Fetch",
     code: `const response = await fetch("/api/users");
 const data = await response.json();`,
-    question: "Vad innehåller data normalt?",
+    question: "Anta att requesten lyckas och svaret innehåller giltig JSON. Vad innehåller data efter båda await?",
     options: [
       "Det parsade JSON-innehållet från response",
       "Själva fetch-funktionen",
       "En React-komponent"
     ],
     answer: 0,
-    explanation: "response.json() läser response body och parser JSON."
-  }
+    explanation: "response.json() returnerar en Promise. Efter await innehåller data det parsade JavaScript-värdet, exempelvis en array eller ett objekt. Ogiltig JSON gör att läsningen misslyckas; HTTP-status bör kontrolleras separat med response.ok."
+  },
+  ...lessonReadingQuestions
 ];
 
 export default function CodeReadingPage() {
-  const [index, setIndex] = useState(0);
+  return <TrainingSession items={tasks} topics={(item) => [item.topic]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, nextTask }: { item: (typeof tasks)[number]; index: number; nextTask: () => void }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
 
-  const task = tasks[index];
+  const task = useMemo(() => shuffleQuestionOptions(source), [source]);
 
-  function next() {
-    setIndex((i) => (i + 1) % tasks.length);
-    setSelected(null);
-    setChecked(false);
-  }
+  const next = nextTask;
 
   return (
     <section className="quiz-page">
       <span className="topic-badge">{task.topic}</span>
       <h2>Kodläsning</h2>
+      <TrainingLessonSource source={task} />
       <pre><code>{task.code}</code></pre>
       <h3>{task.question}</h3>
 
@@ -82,7 +89,9 @@ export default function CodeReadingPage() {
           <button
             type="button"
             key={option}
-            className={`quiz-option ${checked && i === task.answer ? "correct-option" : ""} ${checked && i === selected && i !== task.answer ? "wrong-option" : ""}`}
+            aria-pressed={i === selected}
+            disabled={checked}
+            className={`quiz-option ${!checked && i === selected ? "selected-option" : ""} ${checked && i === task.answer ? "correct-option" : ""} ${checked && i === selected && i !== task.answer ? "wrong-option" : ""}`}
             onClick={() => !checked && setSelected(i)}
           >
             {option}

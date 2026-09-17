@@ -86,7 +86,7 @@ console.log(describeRole(role)); // Vanlig användare
     walkthrough: [
       "Skriv Role som en union av två strängliteraler. Det betyder att de exakta strängarna 'admin' och 'user' är tillåtna. Typen string hade tillåtit vilken sträng som helst; denna union gör kontraktet mer precist och hjälper editorn föreslå rätt värden.",
       "describeRole tar en Role och returnerar en string. Jämförelsen med 'admin' väljer text för administratören; annars återstår 'user' eftersom unionen bara har två alternativ. I exemplet blir resultatet Vanlig användare. Returtypen står efter parameterlistan.",
-      "Koduppgiften ber om Role-unionen och funktionen visar hur den kan användas. 'guest' passar inte kontraktet. Om rollen kommer från ett API måste du kontrollera den verkliga strängen innan du litar på den; en union i TypeScript utför inte behörighetskontroll på servern."
+      "Koduppgiften tränar både Role-unionen och describeRole med parameter- och returtyp. 'guest' passar inte kontraktet. Om rollen kommer från ett API måste du kontrollera den verkliga strängen innan du litar på den; en union i TypeScript utför inte behörighetskontroll på servern."
     ],
     questions: [
       ["Vilket värde ingår inte i Role?", "'guest'", "'admin'", "'user'", "Variabeln role med värdet 'user'", "Unionen listar bara admin och user, så guest är inte ett tillåtet alternativ."],
@@ -113,7 +113,7 @@ console.log(age, active, scores, lengthOf("Sofia"));`,
     walkthrough: [
       "Tre konkreta typfel står som kommentarer och följs av rättad kod. Jämför förväntad typ med verkligt värde: age kräver ett tal, active en boolean och varje scores-element ett tal. Här är rättningen att använda värden av rätt typ, inte att byta allt till any.",
       "När data kommer som text från ett formulär kan du behöva konvertera med exempelvis Number, men då måste även ett misslyckat resultat som NaN hanteras. I dessa fasta deklarationer räcker det att ta bort citattecken där de gav fel typ. En cast ändrar inte värdet vid körning.",
-      "lengthOf visar ett annat felsökningsmönster: value är unknown och får därför inte användas som sträng direkt. typeof-kontrollen begränsar typen i den grenen, där length blir tillgänglig. Övningen utgår från de tre kommenterade felen och ska rättas utan any; den körbara koden visar facit."
+      "lengthOf visar ett annat felsökningsmönster: value är unknown och får därför inte användas som sträng direkt. typeof-kontrollen begränsar typen i den grenen, där length blir tillgänglig. I övningen rättar du de tre deklarationerna utan any eller casts och skriver lengthOf; testa både 'Sofia' och 42. Den körbara koden visar facit."
     ],
     questions: [
       ["Vilken rättning behåller age som number och ger ett korrekt värde?", "const age: number = 20", "const age: any = '20'", "const age: number = '20'", "const age: number = true", "Talet 20 passar number. any skulle dölja problemet utan att göra strängen till ett tal."],

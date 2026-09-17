@@ -1,4 +1,6 @@
-import { useState } from "react";
+import TrainingSession from "./TrainingSession";
+import { shuffleQuestionOptions } from "../data/quizShuffle";
+import { useMemo, useState } from "react";
 
 const tasks = [
   {
@@ -39,16 +41,17 @@ setCount(count + 1);`,
 ];
 
 export default function TypeScriptErrorsPage() {
-  const [index, setIndex] = useState(0);
+  return <TrainingSession items={tasks} topics={(_item) => ["TypeScript"]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, nextTask }: { item: (typeof tasks)[number]; index: number; nextTask: () => void }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
-  const task = tasks[index];
+  const task = useMemo(() => shuffleQuestionOptions(source), [source]);
 
-  function next() {
-    setIndex((i) => (i + 1) % tasks.length);
-    setSelected(null);
-    setChecked(false);
-  }
+  const next = nextTask;
 
   return (
     <section className="quiz-page">
@@ -61,7 +64,9 @@ export default function TypeScriptErrorsPage() {
           <button
             type="button"
             key={option}
-            className={`quiz-option ${checked && i === task.answer ? "correct-option" : ""} ${checked && i === selected && i !== task.answer ? "wrong-option" : ""}`}
+            aria-pressed={i === selected}
+            disabled={checked}
+            className={`quiz-option ${!checked && i === selected ? "selected-option" : ""} ${checked && i === task.answer ? "correct-option" : ""} ${checked && i === selected && i !== task.answer ? "wrong-option" : ""}`}
             onClick={() => !checked && setSelected(i)}
           >
             {option}

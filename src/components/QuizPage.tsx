@@ -1,3 +1,4 @@
+import { shuffleQuestionOptions } from "../data/quizShuffle";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { questionBank, type QuizQuestion } from "../data/questionBank";
@@ -10,21 +11,6 @@ import {
   isQuestionDue,
   recordQuestionResult
 } from "../data/questionProgress";
-
-function shuffleQuestionOptions(question: QuizQuestion): QuizQuestion {
-  const indexed = question.options.map((option, index) => ({ option, index }));
-
-  for (let i = indexed.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
-  }
-
-  return {
-    ...question,
-    options: indexed.map((item) => item.option),
-    answer: indexed.findIndex((item) => item.index === question.answer)
-  };
-}
 
 function weightedRandomQuestions(
   pool: QuizQuestion[],
@@ -323,7 +309,7 @@ export default function QuizPage() {
       </div>
 
       <article className="quiz-card">
-        <h2>{current.question}</h2>
+        <pre style={{ whiteSpace: "pre-wrap" }}>{current.question}</pre>
 
         <div className="quiz-options">
           {current.options.map((option, optionIndex) => {

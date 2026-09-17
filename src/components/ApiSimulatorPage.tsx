@@ -1,4 +1,4 @@
-import { useState } from "react";
+import TrainingSession from "./TrainingSession";
 
 const endpoints = {
   "/api/users": {
@@ -21,9 +21,15 @@ const endpoints = {
   }
 };
 
+const cases = Object.entries(endpoints).map(([path, response]) => ({ path, response }));
+
 export default function ApiSimulatorPage() {
-  const [path, setPath] = useState("/api/users");
-  const response = endpoints[path as keyof typeof endpoints];
+  return <TrainingSession items={cases} topics={() => ["Fetch", "Server / HTTP"]}>
+    {(item, _index, next) => <ApiCase item={item} next={next} />}
+  </TrainingSession>;
+}
+
+function ApiCase({ item: { path, response }, next }: { item: (typeof cases)[number]; next: () => void }) {
 
   return (
     <section>
@@ -35,11 +41,7 @@ export default function ApiSimulatorPage() {
       <div className="api-simulator">
         <div className="api-request">
           <span className="method-badge">GET</span>
-          <select value={path} onChange={(e) => setPath(e.target.value)}>
-            {Object.keys(endpoints).map((key) => (
-              <option key={key} value={key}>{key}</option>
-            ))}
-          </select>
+          <code>{path}</code>
         </div>
 
         <div className="server-arrow">↓ request till server</div>
@@ -56,6 +58,8 @@ export default function ApiSimulatorPage() {
           <pre><code>{JSON.stringify(response.body, null, 2)}</code></pre>
         </div>
       </div>
+      <p>Följ anropet och läs statuskoden och svarets innehåll. Exemplen är simulerade.</p>
+      <button type="button" className="primary-button auto-width" onClick={next}>Nästa anrop</button>
     </section>
   );
 }

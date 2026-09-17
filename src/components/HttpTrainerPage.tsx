@@ -1,4 +1,6 @@
-import { useState } from "react";
+import TrainingSession from "./TrainingSession";
+import { shuffle } from "../data/quizShuffle";
+import { useMemo, useState } from "react";
 
 const tasks = [
   {
@@ -8,7 +10,7 @@ const tasks = [
     explanation: "GET används normalt för att läsa/hämta data."
   },
   {
-    prompt: "Du vill skapa en ny användare.",
+    prompt: "API:et låter servern välja id. Vilken metod används normalt för att skapa en användare via /api/users?",
     answer: "POST",
     options: ["GET", "POST", "404", "PUT"],
     explanation: "POST används ofta när en ny resurs skapas."
@@ -26,7 +28,7 @@ const tasks = [
     explanation: "200 OK är en vanlig statuskod för lyckade requests."
   },
   {
-    prompt: "Servern kraschar oväntat under requesten.",
+    prompt: "Servern kan svara men ett oväntat internt fel hindrar den från att slutföra requesten. Vilken status passar?",
     answer: "500",
     options: ["200", "201", "404", "500"],
     explanation: "500 Internal Server Error betyder fel på serversidan."
@@ -40,16 +42,19 @@ const tasks = [
 ];
 
 export default function HttpTrainerPage() {
-  const [index, setIndex] = useState(0);
+  return <TrainingSession items={tasks} topics={(_item) => ["Server / HTTP"]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, nextTask }: { item: (typeof tasks)[number]; index: number; nextTask: () => void }) {
   const [selected, setSelected] = useState("");
   const [checked, setChecked] = useState(false);
-  const task = tasks[index];
+  const task = useMemo(() => {
+    return { ...source, options: shuffle(source.options) };
+  }, [source]);
 
-  function next() {
-    setIndex((i) => (i + 1) % tasks.length);
-    setSelected("");
-    setChecked(false);
-  }
+  const next = nextTask;
 
   return (
     <section className="quiz-page">
@@ -65,7 +70,9 @@ export default function HttpTrainerPage() {
           <button
             type="button"
             key={option}
-            className={`quiz-option ${checked && option === task.answer ? "correct-option" : ""} ${checked && option === selected && option !== task.answer ? "wrong-option" : ""}`}
+            aria-pressed={option === selected}
+            disabled={checked}
+            className={`quiz-option ${!checked && option === selected ? "selected-option" : ""} ${checked && option === task.answer ? "correct-option" : ""} ${checked && option === selected && option !== task.answer ? "wrong-option" : ""}`}
             onClick={() => !checked && setSelected(option)}
           >
             {option}

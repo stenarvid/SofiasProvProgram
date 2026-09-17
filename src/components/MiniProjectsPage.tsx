@@ -1,3 +1,4 @@
+import TrainingSession from "./TrainingSession";
 import { useState } from "react";
 
 type Project = {
@@ -49,7 +50,7 @@ const projects: Project[] = [
   },
   {
     title: "Global counter",
-    topics: ["Jotai", "State", "Comp"],
+    topics: ["Jotai", "State", "Components"],
     goal: "Två komponenter ska läsa och ändra samma count.",
     easy: [
       "Skapa countAtom = atom(0).",
@@ -76,15 +77,15 @@ export default function MiniProjectsPage() {
 
       <label className="quiz-select-label">
         Svårighetsgrad
-        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as any)}>
+        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as "easy" | "normal" | "hard")}>
           <option value="easy">Lätt – steg för steg</option>
           <option value="normal">Normal</option>
           <option value="hard">Svår – bara målet</option>
         </select>
       </label>
 
-      <div className="grid">
-        {projects.map((project) => (
+      <TrainingSession items={projects} topics={(project) => project.topics}>
+        {(project, _index, next) => (
           <article className="card" key={project.title}>
             <h3>{project.title}</h3>
             <p><strong>Mål:</strong> {project.goal}</p>
@@ -95,9 +96,11 @@ export default function MiniProjectsPage() {
                 <li key={step}>{step}</li>
               ))}
             </ol>
+            <p className="muted">Gör projektet i din egen editor och jämför resultatet med målet.</p>
+            <button type="button" onClick={next}>Gå vidare</button>
           </article>
-        ))}
-      </div>
+        )}
+      </TrainingSession>
     </section>
   );
 }

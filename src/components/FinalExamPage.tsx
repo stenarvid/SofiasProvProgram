@@ -1,3 +1,6 @@
+import { shuffle, shuffleQuestionOptions } from "../data/quizShuffle";
+import { saveTestResult } from "../data/history";
+import FinalExamReview from "./FinalExamReview";
 import { useMemo, useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { configureCourseEditor } from "../data/monacoCourseTypes";
@@ -35,20 +38,21 @@ const debugTasks = [
 ];
 
 const codingTasks = [
-  "Gör en React-counter med useState.",
-  "Gör en komponent UserCard med props name:string och age:number.",
-  "Skriv getUsers som hämtar /api/users med fetch och returnerar JSON."
+  "Skapa Counter med useState(0). Knappen visar count och ökar med 1 per klick.",
+  "Gör UserCard med obligatoriska props name:string och age:number. Visa båda i UI.",
+  "Skriv getUsers som hämtar /api/users med fetch, kastar vid !response.ok och returnerar JSON."
 ];
 
-export default function FinalExamPage() {
+function FinalExamAttempt() {
   const theory = useMemo(
-    () => [...questionBank].sort(() => Math.random() - 0.5).slice(0, 10),
+    () => shuffle(questionBank).slice(0, 10).map(question => shuffleQuestionOptions(question)),
     []
   );
 
   const [stage, setStage] = useState<Stage>("theory");
   const [theoryIndex, setTheoryIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
+  const [theoryAnswers, setTheoryAnswers] = useState<number[]>([]);
   const [theoryScore, setTheoryScore] = useState(0);
   const [readingAnswers, setReadingAnswers] = useState(["", ""]);
   const [debugAnswers, setDebugAnswers] = useState(["", ""]);
@@ -64,6 +68,7 @@ export default function FinalExamPage() {
 
   function submitTheory() {
     if (selected === null) return;
+    setTheoryAnswers(answers => [...answers, selected]);
     const correct = selected === currentTheory.answer;
     if (correct) setTheoryScore((s) => s + 1);
 
@@ -76,6 +81,7 @@ export default function FinalExamPage() {
     );
 
     if (theoryIndex + 1 >= theory.length) {
+      saveTestResult({ date: new Date().toISOString(), score: theoryScore + (correct ? 1 : 0), total: theory.length, topics: ["Slutprov: teori"] });
       setStage("reading");
     } else {
       setTheoryIndex((i) => i + 1);
@@ -89,10 +95,14 @@ export default function FinalExamPage() {
         <h2>Slutprovet är klart</h2>
         <div className="panel">
           <p><strong>Teori:</strong> {theoryScore}/10</p>
-          <p>
-            De praktiska delarna rättar du genom att jämföra med dina vanliga
-            övningar, debug-sidor och cheat sheet.
-          </p>
+          {theory.map((question, index) => <article key={question.id} className="exam-task">
+            <h3>{theoryAnswers[index] === question.answer ? "Rätt" : "Repetera"}</h3>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{question.question}</pre>
+            <p>Ditt svar: {question.options[theoryAnswers[index]]}</p>
+            <p>Rätt svar: {question.options[question.answer]}</p>
+            <p>{question.explanation}</p>
+          </article>)}
+          <FinalExamReview reading={readingAnswers} debug={debugAnswers} coding={codingNotes} chain={chainNotes} oral={oralNotes} />
           <p>
             Frågorna du missade i teoridelen finns nu sparade på Progress-sidan.
           </p>
@@ -113,7 +123,7 @@ export default function FinalExamPage() {
         <div className="panel">
           <span className="topic-badge">{currentTheory.topic}</span>
           <h3>Teori {theoryIndex + 1}/10</h3>
-          <p>{currentTheory.question}</p>
+          <pre style={{ whiteSpace: "pre-wrap" }}>{currentTheory.question}</pre>
 
           <div className="quiz-options">
             {currentTheory.options.map((option, i) => (
@@ -268,4 +278,14 @@ export default function FinalExamPage() {
       )}
     </section>
   );
+}
+
+export default function FinalExamPage() {
+  const [attempt, setAttempt] = useState(0);
+  return <>
+    <FinalExamAttempt key={attempt} />
+    <button type="button" className="secondary-button" onClick={() => {
+      if (window.confirm("Starta om med nya frågor? Svaren i det aktuella provet rensas.")) setAttempt(value => value + 1);
+    }}>Starta ett nytt slutprov</button>
+  </>;
 }

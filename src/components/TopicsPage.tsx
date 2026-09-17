@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import LessonPreparation from "./LessonPreparation";
 import { Link, useSearchParams } from "react-router-dom";
 import { studyTopics as topics } from "../data/studyTopics";
 import { getTheoryExplanation, getExampleWalkthrough } from "../data/theoryExplanations";
@@ -29,6 +30,7 @@ export default function TopicsPage() {
     topics.some((topic) => topic.slug === initialTopic) ? initialTopic : "react"
   );
   const [pageIndex, setPageIndex] = useState(initialPage);
+  const [quizSession, setQuizSession] = useState(0);
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizSelected, setQuizSelected] = useState<number[]>([]);
   const [quizChecked, setQuizChecked] = useState(false);
@@ -91,7 +93,7 @@ export default function TopicsPage() {
 
   const pageQuizQuestions = useMemo(
     () => getStudyPageQuizQuestions(page, selectedTopic, topics),
-    [page, selectedTopic]
+    [page, selectedTopic, quizSession]
   );
   const currentPageQuiz = pageQuizQuestions[Math.min(quizIndex, pageQuizQuestions.length - 1)];
 
@@ -219,11 +221,13 @@ export default function TopicsPage() {
   }
 
   function retryPageQuiz() {
+    setQuizSession(value => value + 1);
     setQuizSelected([]);
     setQuizChecked(false);
   }
 
   function restartPageQuiz() {
+    setQuizSession(value => value + 1);
     setQuizIndex(0);
     setQuizSelected([]);
     setQuizChecked(false);
@@ -281,7 +285,8 @@ export default function TopicsPage() {
         type: currentPageQuiz.type,
         options: currentPageQuiz.options,
         correctAnswers: currentPageQuiz.correctAnswers,
-        explanation: currentPageQuiz.explanation
+        explanation: currentPageQuiz.explanation,
+        code: currentPageQuiz.code
       }
     );
 
@@ -532,6 +537,7 @@ export default function TopicsPage() {
         </div>
 
         <article className="topic-book-page">
+          <LessonPreparation page={page} topicSlug={selectedTopic.slug} />
           <section className="topic-book-section theory-reading-card">
             <div className="theory-section-heading">
               <div>
@@ -736,6 +742,8 @@ export default function TopicsPage() {
                       Rätta svar
                     </button>
 
+                    {currentPageQuiz.code && <pre><code>{currentPageQuiz.code}</code></pre>}
+
                     {quizChecked && (
                       <div className="quiz-result-block">
                         <p
@@ -783,13 +791,24 @@ export default function TopicsPage() {
 
                 {practiceTab === "code" && (
                   <article className="study-focus-card">
-                    <h3>{page.codeTask}</h3>
+                    <h3>Din uppgift</h3>
+                    {page.codeTask.split("\n\n").map((part, index) => <p key={index}>{part}</p>)}
+                    <p className="muted">Kodexemplet visar grunden. För att lösa hela uppgiften behöver du också göra delen Tillämpa själv och kontrollera resultatet.</p>
+                    {page.guidance && <div className="reference-answer">
+                      <strong>Kontrollera ditt resultat</strong>
+                      <ul>{page.guidance.checks.map(check => <li key={check}>{check}</li>)}</ul>
+                      <p>{page.guidance.format === "files"
+                        ? "Skriv separata filavsnitt med filnamn som i exemplet. Kommentarerna skapar inte riktiga filer."
+                        : page.guidance.format === "explanation"
+                          ? "Svara med egna ord och tillämpa resonemanget på uppgiftens nya situation. Ingen ny kod krävs."
+                          : "Skriv det som uppgiften efterfrågar. Exemplet visar även omgivande kod; antagen setup behöver inte skrivas om."}</p>
+                    </div>}
 
                     {getPageCodeGradeMode(page.id) === "auto" ? (
                       <>
                         <p className="muted">
                           Skriv TypeScript/TSX i editorn och tryck <strong>Rätta kod</strong>.
-                          Du får delpoäng och ser exakt vilka krav som saknas. Resultatet sparas i Kodprogress.
+                          Du får återkoppling på övningens kontroller. Hello-övningen körs och renderas; övriga sidövningar kontrollerar kodmönster. Testa även koden själv – 100% betyder att kontrollerna passerar, inte att hela programmet är verifierat.
                         </p>
 
                         <div className="editor-shell polished-editor">
@@ -831,7 +850,7 @@ export default function TopicsPage() {
                           <div className={`page-code-grade ${pageCodeGrade.passed ? "page-code-grade-pass" : "page-code-grade-partial"}`}>
                             <div className="page-code-grade-heading">
                               <div>
-                                <strong>{pageCodeGrade.passed ? "Alla krav uppfyllda ✓" : "Inte helt rätt ännu"}</strong>
+                                <strong>{pageCodeGrade.passed ? "Alla kontroller passerade ✓" : "Kontroller återstår"}</strong>
                                 <span>Försöket är sparat i Kodprogress.</span>
                               </div>
                               <b>{pageCodeGrade.score}%</b>
@@ -861,11 +880,26 @@ export default function TopicsPage() {
                     ) : (
                       <>
                         <p className="muted">
-                          Det här är en förklaringsuppgift, så sidan låtsas inte kunna automatbedöma fritext.
-                          Skriv ditt resonemang och jämför med stödet innan du själv markerar försöket.
+                          Den här uppgiften självbedöms. Skriv ditt svar och jämför med
+                          bedömningsstödet innan du själv markerar försöket.
                         </p>
 
-                        <textarea
+                        {page.guidance?.format === "code" ? (
+                          <Editor
+                            key={`study-editor-${page.id}`}
+                            height="280px"
+                            language="typescript"
+                            path={`study-${page.id}.tsx`}
+                            onMount={handleStudyEditorMount}
+                            theme="vs-dark"
+                            value={code}
+                            onChange={(value) => {
+                              setCode(value ?? "");
+                              setCodeSaved(false);
+                            }}
+                            options={{ minimap: { enabled: false }, fontSize: 14 }}
+                          />
+                        ) : <textarea
                           className="page-self-answer"
                           rows={8}
                           value={code}
@@ -873,8 +907,8 @@ export default function TopicsPage() {
                             setCode(event.target.value);
                             setCodeSaved(false);
                           }}
-                          placeholder="Skriv din förklaring med egna ord..."
-                        />
+                          placeholder={page.guidance?.format === "files" ? "Skriv filnamn och kod i separata avsnitt..." : "Skriv din förklaring med egna ord..."}
+                        />}
 
                         <div className="reference-answer page-self-guidance">
                           <strong>Det ditt svar bör ta upp</strong>

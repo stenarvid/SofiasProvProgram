@@ -45,7 +45,7 @@ export default function TrainingHubPage() {
       <div className="hub-hero">
         <span className="topic-badge">Träna</span>
         <h2>Vad vill du öva på?</h2>
-        <p>Välj ett träningssätt. Du behöver inte tänka på vilken meny funktionen ligger i.</p>
+        <p>Välj ett träningssätt och sedan ämne. Övningsomgångarna avslutas när uppgifterna är slut. Starta en ny omgång när du vill repetera.</p>
       </div>
 
       {groups.map((group) => (

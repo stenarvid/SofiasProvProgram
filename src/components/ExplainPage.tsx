@@ -1,7 +1,10 @@
+import { lessonReadingQuestions, type LessonSource } from "../data/lessonTraining";
+import TrainingLessonSource from "./TrainingLessonSource";
+import TrainingSession from "./TrainingSession";
 import { useState } from "react";
 import { recordAnswer } from "../data/progress";
 
-const cards = [
+const cards: (Partial<LessonSource> & { topic: string; prompt: string; answer: string; code?: string })[] = [
   {
     topic: "React",
     prompt: "Förklara med egna ord: Vad är React?",
@@ -41,27 +44,33 @@ const cards = [
     topic: "Zod",
     prompt: "Varför används Zod?",
     answer: "Zod används för att beskriva och validera strukturen på data, till exempel formulärdata eller API-data."
-  }
+  },
+  ...lessonReadingQuestions.map((question) => ({ ...question, prompt: question.question, answer: `${question.options[question.answer]} ${question.explanation}` }))
 ];
 
 export default function ExplainPage() {
-  const [index, setIndex] = useState(0);
+  return <TrainingSession items={cards} topics={(item) => [item.topic]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, nextTask }: { item: (typeof cards)[number]; index: number; nextTask: () => void }) {
   const [text, setText] = useState("");
   const [show, setShow] = useState(false);
 
-  const card = cards[index];
+  const card = source;
 
   function next(knewIt: boolean) {
     recordAnswer(card.topic, knewIt);
-    setIndex((i) => (i + 1) % cards.length);
-    setText("");
-    setShow(false);
+    nextTask();
   }
 
   return (
     <section className="coding-page">
       <span className="topic-badge">{card.topic}</span>
       <h2>Förklara med egna ord</h2>
+      <TrainingLessonSource source={card} />
+      {card.code && <pre><code>{card.code}</code></pre>}
       <p>{card.prompt}</p>
 
       <textarea

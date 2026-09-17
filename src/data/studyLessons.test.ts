@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 import * as ts from "typescript";
 import { studyTopics } from "./studyTopics";
 import { studyLessons } from "./studyLessons";
@@ -70,11 +71,13 @@ describe("worked study lessons", () => {
     expect(diagnostics).toEqual([]);
   }, 30000);
 
-  it("accepts the worked examples for the corresponding automatically graded exercises", async () => {
+  it("accepts the examples for the base checks but requires the separate application task", async () => {
     const failures: string[] = [];
     for (const page of pages.filter(page => getPageCodeGradeMode(page.id) === "auto")) {
       const result = await gradePageCode(page.id, page.code);
-      if (!result.passed) failures.push(`${page.id}: ${result.compileError ?? result.tests.filter(test => !test.passed).map(test => test.details).join(", ")}`);
+      const baseFailures = result.tests.filter(test => test.name !== "Tillämpa själv" && !test.passed);
+      if (result.compileError || baseFailures.length) failures.push(`${page.id}: ${result.compileError ?? baseFailures.map(test => test.details).join(", ")}`);
+      expect(result.passed, page.id).toBe(false);
     }
     expect(failures).toEqual([]);
   });
@@ -88,7 +91,11 @@ describe("worked study lessons", () => {
       expect(answers(1).sort(), page.id).toEqual(lesson.statements.slice(0, 2).sort());
       expect(answers(2), page.id).toEqual([lesson.questions[1][1]]);
       expect(questions[1].explanation, page.id).toBe(lesson.statementExplanation);
-      expect(getStudyPageQuizQuestions(page, topic, []), page.id).toEqual(questions);
+      const retry = getStudyPageQuizQuestions(page, topic, []);
+      expect(retry.map(question => question.id), page.id).toEqual(questions.map(question => question.id));
+      for (let i = 0; i < retry.length; i++) {
+        expect(retry[i].correctAnswers.map(answer => retry[i].options[answer]).sort(), page.id).toEqual(answers(i).sort());
+      }
     }
   });
 });

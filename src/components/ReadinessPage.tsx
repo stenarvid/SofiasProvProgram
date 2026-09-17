@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { getProgress } from "../data/progress";
 import {
   getDueQuestionIds,
-  getQuestionProgress
+  getQuestionProgress,
+  isQuestionStillMissed
 } from "../data/questionProgress";
 import { questionBank } from "../data/questionBank";
 import { getCodeProgress } from "../data/codeProgress";
@@ -25,11 +26,7 @@ export default function ReadinessPage() {
   const dueIds = new Set(getDueQuestionIds());
   const dueQuestions = questionBank.filter((question) => dueIds.has(question.id)).length;
 
-  const wrongQuestions = Object.values(questionProgress).filter((item) => item.wrong > 0);
-  const unresolvedWrong = wrongQuestions.filter((item) => {
-    const streak = item.consecutiveCorrect ?? 0;
-    return streak < 2;
-  });
+  const unresolvedWrong = Object.values(questionProgress).filter(isQuestionStillMissed);
 
   const codeItems = Object.values(codeProgress);
   const attemptedCode = codeItems.filter((item) => item.attempts > 0);
@@ -102,7 +99,7 @@ export default function ReadinessPage() {
           <div className="readiness-todo">
             <div>
               <strong>{unresolvedWrong.length}</strong>
-              <span>tidigare felaktiga frågor som ännu inte har två rätt i rad</span>
+              <span>missade frågor som ännu inte besvarats rätt efter senaste felet</span>
             </div>
             <div>
               <strong>{dueQuestions}</strong>

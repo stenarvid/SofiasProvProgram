@@ -175,7 +175,7 @@ export default function App() {
     walkthrough: [
       "Definiera Props före komponenten. title och price saknar frågetecken och måste skickas in med rätt typer. description?: string är valfri; när den utelämnas blir den undefined, vilket standardvärdet i parameterlistan fångar upp.",
       "App skickar title som text och price={99} som ett tal. price='99' skulle i stället vara en sträng och ge ett typfel. Resultatet visar Bok, 99 kr och Ingen beskrivning eftersom någon description inte skickas in.",
-      "Övningen kräver title:string och price:number. Det valfria fältet visar hur en komponent kan erbjuda extra innehåll utan att kräva det. TypeScript kontrollerar anropen under utveckling men hämtad JSON blir inte validerad bara för att du ger den typen Props."
+      "Övningen kräver title:string, price:number och description?:string, samt Product och ett användningsexempel. Valfri betyder här att den som använder Product kan utelämna description, inte att du ska lämna bort fältet från typdefinitionen. TypeScript kontrollerar anropen under utveckling men validerar inte hämtad JSON vid runtime."
     ],
     questions: [
       ["Varför skrivs price={99} i App?", "För att skicka ett number i stället för en sträng", "För att göra price valfri", "För att lägga priset i state", "För att dölja priset", "Klamrarna innehåller JavaScript-talet 99. Citattecken runt 99 skulle ge text."],

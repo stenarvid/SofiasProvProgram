@@ -1,5 +1,8 @@
 import * as ts from "typescript";
 import type { GradeResult, GradeTest } from "./codeGrader";
+import { gradeHello } from "./codeGrader";
+import { studyGuidance } from "./studyGuidance";
+import { transferPractice } from "./transferPractice";
 
 type Rule = {
   name: string;
@@ -16,10 +19,82 @@ type PageGradeSpec = {
 const rx = (pattern: RegExp) => (_code: string, clean: string) => pattern.test(clean);
 const rawRx = (pattern: RegExp) => (code: string) => pattern.test(code);
 
+function matchingNodes(code: string, predicate: (node: ts.Node) => boolean) {
+  const source = ts.createSourceFile("answer.tsx", code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const matches: ts.Node[] = [];
+  const visit = (node: ts.Node) => {
+    if (predicate(node)) matches.push(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return matches;
+}
+
+function unwrap(expression: ts.Expression): ts.Expression {
+  return ts.isParenthesizedExpression(expression) ? unwrap(expression.expression) : expression;
+}
+
+function functionalIncrementCount(code: string) {
+  return matchingNodes(code, node => {
+    if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression) || !/^set\w+/.test(node.expression.text)) return false;
+    const callback = node.arguments[0] && unwrap(node.arguments[0]);
+    if (!callback || !ts.isArrowFunction(callback) || callback.parameters.length !== 1) return false;
+    const parameter = callback.parameters[0].name;
+    if (!ts.isIdentifier(parameter)) return false;
+    const body = callback.body;
+    const returned = ts.isBlock(body)
+      ? body.statements.length === 1 && ts.isReturnStatement(body.statements[0]) ? body.statements[0].expression : undefined
+      : body;
+    if (!returned) return false;
+    const expression = unwrap(returned);
+    if (!ts.isBinaryExpression(expression) || expression.operatorToken.kind !== ts.SyntaxKind.PlusToken) return false;
+    const left = unwrap(expression.left);
+    const right = unwrap(expression.right);
+    return ts.isIdentifier(left) && left.text === parameter.text && ts.isNumericLiteral(right) && Number(right.text) === 1;
+  }).length;
+}
+
+function hasPasswordSchema(code: string, requireMinimum: boolean) {
+  return matchingNodes(code, node => {
+    if (!ts.isPropertyAssignment(node) || !ts.isObjectLiteralExpression(node.parent)) return false;
+    if (!(ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) || node.name.text !== "password") return false;
+    const objectCall = node.parent.parent;
+    if (!ts.isCallExpression(objectCall) || !ts.isPropertyAccessExpression(objectCall.expression) ||
+        objectCall.expression.name.text !== "object" || !ts.isIdentifier(objectCall.expression.expression) ||
+        objectCall.expression.expression.text !== "z") return false;
+    let expression = unwrap(node.initializer);
+    let hasMinimum = false;
+    while (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
+      const method = expression.expression;
+      if (method.name.text === "min") {
+        const minimum = expression.arguments[0] && unwrap(expression.arguments[0]);
+        hasMinimum ||= !!minimum && ts.isNumericLiteral(minimum) && Number(minimum.text) === 8;
+      }
+      if (method.name.text === "string" && ts.isIdentifier(method.expression) && method.expression.text === "z") return !requireMinimum || hasMinimum;
+      expression = unwrap(method.expression);
+    }
+    return false;
+  }).length > 0;
+}
+
+function isRoleUnion(code: string) {
+  return matchingNodes(code, node => {
+    if (!ts.isTypeAliasDeclaration(node) || node.name.text !== "Role") return false;
+    let type = node.type;
+    while (ts.isParenthesizedTypeNode(type)) type = type.type;
+    if (!ts.isUnionTypeNode(type) || type.types.length !== 2) return false;
+    const values = type.types.map(member => {
+      while (ts.isParenthesizedTypeNode(member)) member = member.type;
+      return ts.isLiteralTypeNode(member) && ts.isStringLiteral(member.literal) ? member.literal.text : undefined;
+    });
+    return values.includes("admin") && values.includes("user");
+  }).length > 0;
+}
+
 function stripComments(code: string) {
-  return code
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/\/\/.*$/gm, "");
+  const source = ts.createSourceFile("answer.tsx", code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  // A parser preserves URLs and comment markers inside strings/JSX.
+  return ts.createPrinter({ removeComments: true }).printFile(source);
 }
 
 function syntaxError(code: string) {
@@ -46,7 +121,7 @@ function syntaxError(code: string) {
 function resultFromRules(rules: Rule[], code: string): GradeResult {
   const clean = stripComments(code);
   const tests: GradeTest[] = rules.map((rule) => {
-    const passed = rule.test(code, clean);
+    const passed = rule.test(clean, clean);
     return {
       name: rule.name,
       passed,
@@ -126,11 +201,11 @@ const specs: Record<string, PageGradeSpec> = {
   "state-p3": {
     kind: "auto",
     rules: [
-      raw("Functional update", "functional update med prev/annat parameternamn", /set\w+\s*\(\s*(\w+)\s*=>\s*\1\s*\+\s*1\s*\)/),
+      { name: "Functional update", details: "functional update använder parameterns föregående värde", test: code => functionalIncrementCount(code) > 0 },
       {
         name: "Två uppdateringar",
         details: "två funktionella +1-uppdateringar",
-        test: (code) => (code.match(/set\w+\s*\(\s*(\w+)\s*=>\s*\1\s*\+\s*1\s*\)/g) ?? []).length >= 2
+        test: code => functionalIncrementCount(code) >= 2
       }
     ]
   },
@@ -161,12 +236,7 @@ const specs: Record<string, PageGradeSpec> = {
     rules: [r("ProductCard", "en ProductCard-komponent", /\b(?:function|const)\s+ProductCard\b/)]
   },
   "components-p2": {
-    kind: "auto",
-    rules: [
-      raw("Button", "en Button-komponent", /\b(?:function|const)\s+Button\b/),
-      raw("Export", "Button exporteras", /export\s+default\s+Button|export\s+default\s+(?:function|class)\s+Button/),
-      raw("Import", "en import av Button finns", /import\s+Button\s+from\s+["'][^"']+["']/)
-    ]
+    kind: "self"
   },
   "components-p3": {
     kind: "auto",
@@ -302,8 +372,8 @@ const specs: Record<string, PageGradeSpec> = {
   "zod-p2": {
     kind: "auto",
     rules: [
-      raw("password", "password är en string i schema", /password\s*:\s*z\.string\s*\(\s*\)/),
-      raw("min(8)", "password kräver minst 8 tecken", /\.min\s*\(\s*8\b/)
+      { name: "password", details: "password är en string i schema", test: code => hasPasswordSchema(code, false) },
+      { name: "min(8)", details: "password-fältets z.string() har min(8)", test: code => hasPasswordSchema(code, true) }
     ]
   },
   "zod-p3": {
@@ -314,12 +384,7 @@ const specs: Record<string, PageGradeSpec> = {
     ]
   },
   "zod-p4": {
-    kind: "auto",
-    rules: [
-      raw("handleSubmit", "handleSubmit finns", /\bhandleSubmit\b/),
-      raw("Validering", "safeParse används före request", /\.safeParse\s*\(/),
-      raw("Fetch", "fetch används", /\bfetch\s*\(/)
-    ]
+    kind: "self"
   },
 
   "forms-p1": {
@@ -339,13 +404,7 @@ const specs: Record<string, PageGradeSpec> = {
     ]
   },
   "forms-p3": {
-    kind: "auto",
-    rules: [
-      raw("Name", "name-fält/state finns", /\bname\b/),
-      raw("Email", "email-fält/state finns", /\bemail\b/),
-      raw("Validering", "någon validering sker före submit", /safeParse|\.email\s*\(|if\s*\(/),
-      raw("Submit", "form/onSubmit finns", /onSubmit|handleSubmit/)
-    ]
+    kind: "self"
   },
   "forms-p4": {
     kind: "auto",
@@ -434,19 +493,12 @@ const specs: Record<string, PageGradeSpec> = {
   "typescript-p4": {
     kind: "auto",
     rules: [
-      raw("Role union", "Role är unionen 'admin' | 'user'", /\btype\s+Role\s*=\s*(?:["']admin["']\s*\|\s*["']user["']|["']user["']\s*\|\s*["']admin["'])/)
+      { name: "Role union", details: "Role är exakt unionen 'admin' | 'user'", test: isRoleUnion }
     ]
   },
   "typescript-p5": {
-    kind: "auto",
-    rules: [
-      { name: "Ingen any", details: "ingen explicit any används", test: (_c, clean) => !/\bany\b/.test(clean) },
-      {
-        name: "Koden är TypeScript-syntaktiskt giltig",
-        details: "inga syntaxfel hittades",
-        test: (code) => syntaxError(code) === null
-      }
-    ]
+    kind: "self",
+    guidance: "Kontrollera typfelen i editorn och jämför med facit: age: number = 20, active: boolean = true och scores: number[] = [10, 20, 30]. Behåll typerna och undvik any och casts. Syntaxkontroll ensam upptäcker inte felaktiga typer."
   },
 
   "hono-p1": {
@@ -481,12 +533,7 @@ const specs: Record<string, PageGradeSpec> = {
     ]
   },
   "hono-p5": {
-    kind: "auto",
-    rules: [
-      raw("Frontend fetch", "fetch('/api/products')", /fetch\s*\(\s*["']\/api\/products["']/),
-      raw("Hono GET", "app.get('/api/products', ...)", /app\.get\s*\(\s*["']\/api\/products["']/),
-      raw("JSON response", "Hono-routen använder c.json", /\bc\.json\s*\(/)
-    ]
+    kind: "self"
   },
 
   "server-p1": {
@@ -498,12 +545,8 @@ const specs: Record<string, PageGradeSpec> = {
     guidance: "Ta med metod (ofta POST), URL, headers/content-type och JSON-body."
   },
   "server-p3": {
-    kind: "auto",
-    rules: [
-      raw("200", "200 för lyckad GET", /\b200\b/),
-      raw("201", "201 för skapad resurs", /\b201\b/),
-      raw("404", "404 för saknad resurs", /\b404\b/)
-    ]
+    kind: "self",
+    guidance: "Jämför varje situation med rätt status: lyckad GET med data → 200 OK; skapad resurs → 201 Created; saknad resurs → 404 Not Found. Det räcker inte att nämna koderna; kopplingen måste vara rätt."
   },
   "server-p4": {
     kind: "self",
@@ -516,7 +559,7 @@ export function getPageCodeGradeMode(pageId: string) {
 }
 
 export function getSelfAssessmentGuidance(pageId: string) {
-  return specs[pageId]?.guidance ?? "Jämför ditt svar med teorin och kontrollera att du använder rätt begrepp.";
+  return studyGuidance[pageId]?.checks.join(" ") ?? specs[pageId]?.guidance ?? "Jämför ditt svar med teorin och kontrollera att du använder rätt begrepp.";
 }
 
 export async function gradePageCode(pageId: string, code: string): Promise<GradeResult> {
@@ -527,7 +570,7 @@ export async function gradePageCode(pageId: string, code: string): Promise<Grade
       score: 0,
       passed: false,
       tests: [],
-      compileError: "Den här uppgiften är en förklaringsuppgift och självbedöms i stället för automatisk kodrättning."
+      compileError: "Den här uppgiften självbedöms med bedömningsstödet i stället för automatisk kodrättning."
     };
   }
 
@@ -541,5 +584,25 @@ export async function gradePageCode(pageId: string, code: string): Promise<Grade
     };
   }
 
-  return resultFromRules(spec.rules ?? [], code);
+  const base = pageId === "react-p1" ? await gradeHello(code) : resultFromRules(spec.rules ?? [], code);
+  if (base.compileError) return base;
+  const extension = transferPractice[pageId];
+  if (!extension?.pattern) return base;
+  const pattern = extension.pattern;
+  const clean = stripComments(code);
+  const matches = matchingNodes(clean, node => {
+    const eligible = extension.kind === "jsx" ? ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node) || ts.isJsxFragment(node)
+      : extension.kind === "call" ? ts.isCallExpression(node)
+      : extension.kind === "declaration" ? ts.isVariableDeclaration(node) || ts.isPropertySignature(node)
+      : ts.isFunctionDeclaration(node) || ts.isVariableDeclaration(node);
+    return eligible && pattern.test(node.getText());
+  });
+  const tests = [...base.tests, {
+    name: "Tillämpa själv",
+    passed: matches.length > 0,
+    details: extension.check
+  }];
+  const passed = tests.every(test => test.passed);
+  const score = Math.round(100 * tests.filter(test => test.passed).length / tests.length);
+  return { score, passed, tests };
 }

@@ -11,6 +11,7 @@ describe("study page quizzes", () => {
       for (const page of topic.pages) {
         const questions = getStudyPageQuizQuestions(page, topic, studyTopics);
         expect(questions).toHaveLength(3);
+        for (const question of questions) expect(question.code).toBe(page.code);
       }
     }
   });

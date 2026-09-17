@@ -3,9 +3,10 @@ import { libraryLessons } from "./studyLessonsLibraries";
 import { formLessons } from "./studyLessonsForms";
 import { typeLessons } from "./studyLessonsTypes";
 import { serverLessons } from "./studyLessonsServer";
+import { studyGuidance } from "./studyGuidance";
 
 /** Page-specific examples and questions. Correct single-choice answer is first
- * here; the quiz UI receives deterministically shuffled options. */
+ * here; the quiz UI shuffles options for each attempt. */
 export type LessonQuestion = [question: string, correct: string, wrong1: string, wrong2: string, wrong3: string, explanation: string];
 export type StudyLesson = {
   code: string;
@@ -254,9 +255,13 @@ export default function Counter() {
 export function getLessonPageContent(pageId: string) {
   const lesson = studyLessons[pageId];
   if (!lesson) throw new Error(`Saknar lektionsinnehåll för ${pageId}`);
+  const guidance = studyGuidance[pageId];
+  if (!guidance) throw new Error(`Saknar uppgiftsstöd för ${pageId}`);
   const [question, correct, wrong1, wrong2, wrong3, explanation] = lesson.questions[0];
   return {
     code: lesson.code,
+    guidance,
+    codeTask: guidance.task,
     quiz: { question, options: [correct, wrong1, wrong2, wrong3], answer: 0, explanation }
   };
 }

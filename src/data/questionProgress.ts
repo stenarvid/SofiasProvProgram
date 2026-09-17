@@ -5,6 +5,7 @@ export type QuestionReviewSnapshot = {
   options: string[];
   correctAnswers: number[];
   explanation: string;
+  code?: string;
 };
 
 export type QuestionProgress = {

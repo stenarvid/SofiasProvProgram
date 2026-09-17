@@ -1,3 +1,4 @@
+import { shuffleMultipleAnswers } from "./quizShuffle";
 import type { StudyPage, StudyTopic } from "./studyTopics";
 import { studyLessons, type LessonQuestion } from "./studyLessons";
 
@@ -5,31 +6,13 @@ export type StudyPageQuizQuestion = {
   id: string;
   type: "single" | "multi";
   question: string;
+  code?: string;
   options: string[];
   correctAnswers: number[];
   explanation: string;
 };
 
-function hash(text: string) {
-  let value = 0;
-  for (const char of text) value = (value * 31 + char.charCodeAt(0)) >>> 0;
-  return value;
-}
-
-function shuffleAnswers(question: StudyPageQuizQuestion): StudyPageQuizQuestion {
-  const options = question.options.map((text, index) => ({ text, correct: question.correctAnswers.includes(index) }));
-  let state = hash(question.id) || 1;
-  for (let i = options.length - 1; i > 0; i--) {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    const j = state % (i + 1);
-    [options[i], options[j]] = [options[j], options[i]];
-  }
-  return {
-    ...question,
-    options: options.map(option => option.text),
-    correctAnswers: options.flatMap((option, index) => option.correct ? [index] : [])
-  };
-}
+const shuffleAnswers = shuffleMultipleAnswers;
 
 function single(id: string, content: LessonQuestion): StudyPageQuizQuestion {
   const [question, correct, wrong1, wrong2, wrong3, explanation] = content;
@@ -52,13 +35,13 @@ export function getStudyPageQuizQuestions(
   return [
     single(`${page.id}-original`, lesson.questions[0]),
     shuffleAnswers({
-      id: `${page.id}-multi`, type: "multi",
+      id: `${page.id}-multi`, type: "multi" as const,
       question: `Vilka påståenden stämmer om ${page.title.toLocaleLowerCase("sv")}? Välj två svar.`,
       options: [...lesson.statements], correctAnswers: [0, 1],
       explanation: lesson.statementExplanation
     }),
     single(`${page.id}-recap`, lesson.questions[1])
-  ];
+  ].map(question => ({ ...question, code: lesson.code }));
 }
 
 export function isQuizSelectionCorrect(selected: number[], correctAnswers: number[]) {

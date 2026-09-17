@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { getQuestionProgress } from "../data/questionProgress";
+import { TrainingTopicSelect, trainingTopic } from "./TrainingSession";
 
 const NOTE_KEY = "provtraning-mistake-notes-v1";
 
@@ -15,10 +16,12 @@ function getNotes(): Record<string, string> {
 export default function MistakeNotebookPage() {
   const progress = getQuestionProgress();
   const [notes, setNotes] = useState<Record<string, string>>(() => getNotes());
+  const [topic, setTopic] = useState("");
 
-  const mistakes = Object.values(progress)
+  const allMistakes = Object.values(progress)
     .filter((item) => item.wrong > 0)
     .sort((a, b) => b.wrong - a.wrong || b.seen - a.seen);
+  const mistakes = allMistakes.filter((item) => !topic || trainingTopic(item.topic) === topic);
 
   function saveNote(id: string, value: string) {
     const next = { ...notes, [id]: value };
@@ -36,6 +39,7 @@ export default function MistakeNotebookPage() {
       </div>
 
       <div className="mistake-toolbar">
+        <TrainingTopicSelect topics={allMistakes.map((item) => item.topic)} value={topic} onChange={setTopic} />
         <strong>{mistakes.length} frågor i felboken</strong>
         {mistakes.length > 0 && <Link to="/missed-questions">Öva alla missade →</Link>}
       </div>
@@ -63,7 +67,7 @@ export default function MistakeNotebookPage() {
         </div>
       ) : (
         <article className="dashboard-panel">
-          <h3>Inga misstag sparade ännu</h3>
+          <h3>{topic ? "Inga misstag för det valda ämnet" : "Inga misstag sparade ännu"}</h3>
           <p className="muted">När du svarar fel på quiz dyker frågan upp här automatiskt.</p>
         </article>
       )}

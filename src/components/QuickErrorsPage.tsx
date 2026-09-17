@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { lessonQuickErrors, type LessonSource } from "../data/lessonTraining";
+import TrainingLessonSource from "./TrainingLessonSource";
+import TrainingSession from "./TrainingSession";
+import { shuffleQuestionOptions } from "../data/quizShuffle";
+import { useMemo, useState } from "react";
 
-const questions = [
+const questions: (Partial<LessonSource> & { topic: string; code: string; options: string[]; answer: number; explanation: string; question?: string; context?: string })[] = [
   {
     topic: "State",
     code: `onClick={setCount(count + 1)}`,
@@ -44,26 +48,30 @@ const questions = [
     ],
     answer: 0,
     explanation: "Skriv <Route path='/about' element={<About />} />."
-  }
+  },
+  ...lessonQuickErrors
 ];
 
 export default function QuickErrorsPage() {
-  const [index, setIndex] = useState(0);
+  return <TrainingSession items={questions} topics={(item) => [item.topic]}>
+    {(item, index, next) => <TrainingTask item={item} index={index} nextTask={next} />}
+  </TrainingSession>;
+}
+
+function TrainingTask({ item: source, nextTask }: { item: (typeof questions)[number]; index: number; nextTask: () => void }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
 
-  const q = questions[index];
+  const q = useMemo(() => shuffleQuestionOptions(source), [source]);
 
-  function next() {
-    setIndex((i) => (i + 1) % questions.length);
-    setSelected(null);
-    setChecked(false);
-  }
+  const next = nextTask;
 
   return (
     <section className="quiz-page">
       <span className="topic-badge">{q.topic}</span>
-      <h2>Vad är fel här?</h2>
+      <h2>{q.question ?? "Vad är fel här?"}</h2>
+      <TrainingLessonSource source={q} />
+      {q.context && <p>{q.context}</p>}
 
       <pre><code>{q.code}</code></pre>
 
@@ -72,7 +80,9 @@ export default function QuickErrorsPage() {
           <button
             type="button"
             key={option}
-            className={`quiz-option ${checked && i === q.answer ? "correct-option" : ""} ${checked && i === selected && i !== q.answer ? "wrong-option" : ""}`}
+            aria-pressed={i === selected}
+            disabled={checked}
+            className={`quiz-option ${!checked && i === selected ? "selected-option" : ""} ${checked && i === q.answer ? "correct-option" : ""} ${checked && i === selected && i !== q.answer ? "wrong-option" : ""}`}
             onClick={() => !checked && setSelected(i)}
           >
             {option}

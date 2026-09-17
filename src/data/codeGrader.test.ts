@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { gradeExercise } from "./codeGrader";
 
 (globalThis as typeof globalThis & {
@@ -6,6 +6,17 @@ import { gradeExercise } from "./codeGrader";
 }).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("codeGrader", () => {
+  it("grades interactive code through the production update path", async () => {
+    vi.stubEnv("PROD", true);
+    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = false;
+    try {
+      const result = await gradeExercise("counter", 'function Counter() { const [count, setCount] = useState(0); return <button onClick={() => setCount(c => c + 1)}>{count}</button>; }');
+      expect(result.score).toBe(100);
+    } finally {
+      vi.unstubAllEnvs();
+      (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    }
+  });
   it("accepts a working counter using functional state updates", async () => {
     const result = await gradeExercise("counter", `
       import { useState } from "react";

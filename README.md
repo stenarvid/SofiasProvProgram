@@ -2,6 +2,25 @@
 
 Det här är ett riktigt React + TypeScript-projekt byggt med Vite.
 
+## Aktuella förbättringar för provträning
+
+- Alla 56 siduppgifter har nu en obligatorisk del ”Tillämpa själv” som kräver en ändring eller ett nytt scenario utöver kodexemplet. De 44 automatiska sidrättarna kontrollerar även ändringen; inget oförändrat lektions­exempel ger godkänt. De övriga uppgifterna självbedöms med utökade kontrollpunkter. Tidigare sparade poäng och lösningar finns kvar och har inte ombedömts.
+
+- Snabbfel har 116 frågor och Kodläsning 116 frågor. Båda täcker alla 14 ämnen och ger två frågor per lektionssida utöver de tidigare frågorna. Förklara koden, Förklara och Flashcards använder också alla 56 sidor. Sidanknutna uppgifter visar referenskoden och länkar till lektionen. De nya Snabbfel-frågorna ber dig hitta ett felaktigt påstående om ett korrekt referensexempel.
+
+- Alla 15 övningslägen under Träna har ämnesval och ett tydligt avslut med knappen ”Starta ny omgång”. Visade uppgifter upprepas inte inom samma omgång, även vid ämnesbyte. Omstart eller ett nytt besök på sidan börjar en ny omgång. Begreppskartan och felboken har ämnesfilter; kodbanken har redan ämnesflikar.
+
+- Alla 56 lektionssidor har granskats mot exempel, frågor och uppgifter. Varje sida har nu ett lärandemål, förkunskapslänkar, en tydlig uppgift och två kontroller av resultatet. Alla 14 ämnen har grundförklaringar. Se [sidgranskningen](PAGE_BY_PAGE_REVIEW.md) för detaljer, studieordning och avgränsningar.
+
+- Den gemensamma quizbanken innehåller 168 frågor: 56 grundfrågor och 112 frågor med kodexempel från lektionerna.
+- Svarsalternativ blandas på nytt i quiz, slutprov, checkpoints, sidquiz och repetition. Ordningen ligger still medan du svarar. Slumpning kan ibland ge samma ordning igen.
+- Slutprovet visar dina svar, rätta teorisvar, förklaringar och bedömningsstöd för alla praktiska delar. Counter och fetch kan testas direkt efter provet. Övriga praktiska svar jämför du själv med bedömningsstödet.
+- Provläget behåller dina svar synliga och låser redigering när tiden är slut.
+- Kommentarer kan inte längre uppfylla sidkodens kontroller. Hello-övningen kontrollerar faktisk rendering. Övriga sidkodskontroller söker kodmönster och är inte fullständiga funktions- eller typkontroller.
+- React-kodrättningen fungerar även i produktionsbygget, där Reacts testfunktion `act()` inte är tillgänglig.
+
+Tidigare versionsanteckningar nedan beskriver hur projektet har utvecklats; äldre frågeantal gäller inte den aktuella versionen.
+
 ## Starta projektet
 
 Öppna terminalen i projektmappen och kör:

@@ -1,3 +1,4 @@
+import { shuffle, shuffleQuestionOptions } from "../data/quizShuffle";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { studyTopics } from "../data/studyTopics";
@@ -11,19 +12,16 @@ type CheckpointQuestion = {
   question: string;
   options: string[];
   answer: number;
+  explanation: string;
 };
-
-function shuffle<T>(items: T[]) {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 export default function TopicCheckpointPage() {
   const { topicSlug } = useParams();
+  return <CheckpointAttempt key={topicSlug} topicSlug={topicSlug} />;
+}
+
+function CheckpointAttempt({ topicSlug }: { topicSlug: string | undefined }) {
+  const [attempt, setAttempt] = useState(0);
   const topic = studyTopics.find((item) => item.slug === topicSlug);
 
   const questions = useMemo<CheckpointQuestion[]>(
@@ -35,11 +33,12 @@ export default function TopicCheckpointPage() {
               pageTitle: page.title,
               question: page.quiz.question,
               options: page.quiz.options,
-              answer: page.quiz.answer
-            }))
+              answer: page.quiz.answer,
+              explanation: page.quiz.explanation ?? page.intro
+            })).map(question => shuffleQuestionOptions(question))
           )
         : [],
-    [topicSlug]
+    [topicSlug, attempt]
   );
 
   const [index, setIndex] = useState(0);
@@ -74,10 +73,9 @@ export default function TopicCheckpointPage() {
 
   function next() {
     if (index + 1 >= questions.length) {
-      const finalScore = score + (checked && selected === current.answer ? 0 : 0);
       saveTestResult({
         date: new Date().toISOString(),
-        score: finalScore,
+        score,
         total: questions.length,
         topics: [`Checkpoint: ${topic!.title}`]
       });
@@ -100,6 +98,14 @@ export default function TopicCheckpointPage() {
           <p className="muted">Resultatet är sparat i din vanliga historik och progress.</p>
 
           <div className="checkpoint-actions">
+            <button type="button" className="primary-button" onClick={() => {
+              setAttempt(value => value + 1);
+              setIndex(0);
+              setSelected(null);
+              setChecked(false);
+              setScore(0);
+              setFinished(false);
+            }}>Gör om med blandade svar</button>
             <Link className="primary-button" to={`/topics?topic=${topic.slug}&page=1`}>
               Tillbaka till ämnet
             </Link>
@@ -160,6 +166,7 @@ export default function TopicCheckpointPage() {
         ) : (
           <>
             <div className={`feedback ${correct ? "feedback-correct" : "feedback-wrong"}`}>
+              <p>{current.explanation}</p>
               <h3>{correct ? "Rätt!" : "Inte riktigt."}</h3>
               {!correct && <p>Rätt svar är <strong>{current.options[current.answer]}</strong>.</p>}
             </div>

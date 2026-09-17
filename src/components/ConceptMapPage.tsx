@@ -1,6 +1,10 @@
+import { useState } from "react";
+import { TrainingTopicSelect } from "./TrainingSession";
+
 const flows = [
   {
     title: "React-grunden",
+    topics: ["React", "Components", "Props", "State"],
     nodes: [
       ["Component", "En funktionell UI-byggsten"],
       ["Props", "Data in från parent"],
@@ -10,6 +14,7 @@ const flows = [
   },
   {
     title: "Formulär → server",
+    topics: ["Forms", "State", "Zod", "Fetch", "Hono", "Server / HTTP", "React"],
     nodes: [
       ["Form / State", "Samla användarens data"],
       ["Zod", "Validera runtime-data"],
@@ -21,6 +26,7 @@ const flows = [
   },
   {
     title: "Server state",
+    topics: ["React Query"],
     nodes: [
       ["React Query", "Orkestrerar server-state"],
       ["queryKey", "Identifierar cachepost"],
@@ -31,6 +37,7 @@ const flows = [
 ];
 
 export default function ConceptMapPage() {
+  const [topic, setTopic] = useState("");
   return (
     <section className="learning-page">
       <div className="hub-hero">
@@ -40,7 +47,8 @@ export default function ConceptMapPage() {
       </div>
 
       <div className="concept-flows">
-        {flows.map((flow) => (
+        <TrainingTopicSelect topics={flows.flatMap((flow) => flow.topics)} value={topic} onChange={setTopic} />
+        {flows.filter((flow) => !topic || flow.topics.includes(topic)).map((flow) => (
           <article className="concept-flow" key={flow.title}>
             <h3>{flow.title}</h3>
             <div>

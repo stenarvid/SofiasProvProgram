@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getDueQuestionIds, getQuestionProgress } from "../data/questionProgress";
+import { getDueQuestionIds } from "../data/questionProgress";
+import { getAllMissedQuestions } from "../data/missedQuestions";
 import { questionBank } from "../data/questionBank";
 import { getProgress } from "../data/progress";
 import { getStudyFlow } from "../data/studyFlow";
@@ -23,13 +24,7 @@ export default function SmartPracticePage() {
       return;
     }
 
-    const questionProgress = getQuestionProgress();
-    const wrong = questionBank.filter((question) => {
-      const stat = questionProgress[question.id];
-      return stat && stat.wrong > 0 && (stat.consecutiveCorrect ?? 0) < 2;
-    });
-
-    if (wrong.length) {
+    if (getAllMissedQuestions().some(question => question.options.length > 0)) {
       navigate("/missed-questions", { replace: true });
       return;
     }

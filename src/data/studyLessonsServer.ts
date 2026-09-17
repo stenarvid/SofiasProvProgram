@@ -64,7 +64,7 @@ export default app;`,
     walkthrough: [
       "POST-routen matchar /api/users och handlern är async eftersom request body läses asynkront. await c.req.json() tolkar inkommande JSON. Ogiltig JSON fångas i try/catch och ger status 400 i stället för att fortsätta som om body vore ett giltigt objekt.",
       "Giltig JSON kan ändå ha fel form, till exempel name: 42. Därför behandlas body som unknown och skickas till Zod-schemat. Bara ett namn som uppfyller reglerna når framgångsgrenen. Skillnaden mellan JSON-parsning och innehållsvalidering är viktig när data kommer utifrån.",
-      "Exemplet bekräftar mottagen data med received och status 200; det sparar inte någon användare. En skapande route behöver dessutom skapa eller spara resursen och kan då använda 201. Övningen tränar POST-routen och body-läsningen, och exemplet visar hur du hanterar fel runt dem."
+      "Exemplet bekräftar mottagen data med received och status 200; det sparar inte någon användare. En skapande route behöver dessutom skapa eller spara resursen och kan då använda 201. Övningen tränar POST-routen, body-läsningen och de två felkontrollerna innan mottagandet bekräftas."
     ],
     questions: [
       ["Vilket anrop läser klientens JSON-body?", "await c.req.json()", "c.json(body)", "new Hono()", "app.get('/api/users')", "c.req beskriver den inkommande requesten. c.json skapar i stället ett utgående response."],
@@ -155,7 +155,7 @@ loadUsers().catch(error => console.error(error.message));`,
     walkthrough: [
       "Serverdelen definierar vilken data en GET-request ska få, medan klientdelen ber om datan. De ligger i separata filer och körs i olika miljöer. Klienten anropar en URL; den importerar inte Hono-handlern och kan inte komma åt serverns lokala variabler direkt.",
       "När loadUsers anropas skickas requesten. Servern matchar routen och skapar svaret, därefter läser webbläsaren body och loggar användarlistan. I en React-app skulle en knapp kunna anropa motsvarande handler och resultatet sparas med en setter för att synas i JSX.",
-      "Förklaringsuppgiften börjar med ett klick på Ladda användare: beskriv event, request, serverns arbete, response och UI-uppdatering i den ordningen. En fungerande server och en adress som klienten når förutsätts. Konsolexemplet isolerar ansvarsdelningen; sista serversidan visar hela knappflödet."
+      "Förklaringsuppgiften följer just detta konsolanrop: beskriv klientens funktionsanrop, request, serverns arbete, response och loggningen. En fungerande server och en adress som klienten når förutsätts. Sista serversidan visar nästa steg med knapp, state och UI-uppdatering; här behöver du inte hitta på en knapp som saknas i exemplet."
     ],
     questions: [
       ["Vilken del körs i webbläsaren här?", "loadUsers med fetch", "Hono-routens handler", "Serverprocessens startkod", "Alla filer körs alltid i samma miljö", "Klientdelen skickar requesten via fetch, medan Hono-delen hanterar den på servern."],

@@ -55,19 +55,21 @@ describe("study content audit", () => {
     }
   });
 
-  it("has exactly four global quiz questions per subject", () => {
+  it("keeps four foundation questions and adds application questions for every subject", () => {
     for (const topic of canonicalTopics) {
       expect(
-        questionBank.filter((question) => question.topic === topic),
+        questionBank.filter((question) => question.topic === topic && question.id.startsWith("q")),
         `${topic} global quiz count`
       ).toHaveLength(4);
+      const pages = studyTopics.find(subject => subject.title === topic)!.pages;
+      expect(questionBank.filter(question => question.topic === topic && question.id.startsWith("applied-"))).toHaveLength(pages.length * 2);
     }
   });
 
   it("has unique global question ids and valid answers", () => {
     const ids = questionBank.map((question) => question.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(questionBank).toHaveLength(56);
+    expect(questionBank.length).toBeGreaterThan(56);
 
     for (const question of questionBank) {
       expect(question.options).toHaveLength(4);

@@ -149,7 +149,7 @@ export default function App() {
     walkthrough: [
       "Kolonet i :id markerar att en del av adressen är en parameter. Skriv mönstret /products/:id i Route, men öppna en konkret adress som /products/42 i webbläsaren. Samma route kan även matcha /products/7 utan en separat Route för varje produkt.",
       "Product anropar useParams för att läsa de matchade parametrarna. På /products/42 är id strängen '42', och rubriken blir Produkt 42. Parametern blir inte automatiskt ett tal eller ett produktobjekt. Om du behöver räkna med den måste du först kontrollera och konvertera värdet.",
-      "Koduppgiften kräver den dynamiska routen; exemplet visar dessutom hur vyn använder värdet. Parameternamnet måste stämma: om path använder :productId ska du läsa productId. Att adressen matchar garanterar inte att produkten finns på servern, så en senare datahämtning behöver även hantera saknad produkt."
+      "Koduppgiften kräver både den dynamiska routen och Product-vyn som läser id. Parameternamnet måste stämma: om path använder :productId ska du läsa productId. Att adressen matchar garanterar inte att produkten finns på servern, så en senare datahämtning behöver även hantera saknad produkt."
     ],
     questions: [
       ["Vad är id på adressen /products/42 i exemplet?", "Strängen '42'", "Talet 42 automatiskt", "Strängen ':id'", "Hela produktobjektet", "URL-parametrar läses som text. useParams hämtar segmentet men laddar inte produktdata."],
@@ -199,7 +199,7 @@ getUsers()
     walkthrough: [
       "Lägg anropet i en async-funktion så att await kan användas. getUsers är funktionens namn och /api/users är den adress som servern måste erbjuda. En relativ adress anropas på samma origin som sidan; detta exempel förutsätter ett JSON-API där och skapar inte servern åt dig.",
       "fetch startar en GET-request eftersom ingen annan metod anges. await ger dig ett Response-objekt när svaret finns, inte den färdiga användarlistan. Sedan kontrolleras status och response.json() läser innehållet. Nästa sida går djupare in på just dessa två steg.",
-      "Anropet längst ned använder resultatet i then och visar fel i catch. Listan skrivs i utvecklarverktygens konsol, inte automatiskt på webbsidan. I koduppgiften skapar du getUsers; för att visa data i React behöver du också lagra resultatet och returnera JSX, vilket en senare sida visar."
+      "Anropet längst ned använder resultatet i then och visar fel i catch. Listan skrivs i utvecklarverktygens konsol, inte automatiskt på webbsidan. I koduppgiften skriver du både getUsers och ett anrop som hanterar resultat eller fel. För att visa data i React behövs dessutom en koppling till JSX, vilket en senare sida visar."
     ],
     questions: [
       ["Vad returnerar fetch('/api/users') direkt, innan await?", "En Promise som kan ge ett Response", "En färdig användarlista", "En JSON-sträng i alla fall", "En React-komponent", "fetch är asynkront. Promise-resultatet blir ett Response vars body sedan kan läsas."],

@@ -1,4 +1,8 @@
-import { useMemo, useState } from "react";
+import { lessonReadingQuestions, type LessonSource } from "../data/lessonTraining";
+import TrainingLessonSource from "./TrainingLessonSource";
+import TrainingSession from "./TrainingSession";
+import { useState } from "react";
+import { shuffle } from "../data/quizShuffle";
 
 const cards = [
   ["useState", "Lokalt state i en React-komponent.", `const [count, setCount] = useState(0);`],
@@ -13,37 +17,29 @@ const cards = [
   ["HTTP 404", "Resursen hittades inte.", `404 Not Found`]
 ] as const;
 
-function shuffle<T>(items: readonly T[]): T[] {
-  return [...items].sort(() => Math.random() - 0.5);
-}
+const cardTopics = ["State", "Props", "React Query", "Jotai", "Zod", "Fetch", "React Router", "Hono", "Databindning", "Server"];
+type TrainingCard = Partial<LessonSource> & { topic: string; card: readonly [string, string, string] };
+const taggedCards: TrainingCard[] = [
+  ...cards.map((card, index) => ({ card, topic: cardTopics[index] })),
+  ...lessonReadingQuestions.map((question): TrainingCard => ({
+    ...question,
+    card: [question.question, question.options[question.answer] + " " + question.explanation, question.code]
+  }))
+];
 
 export default function FlashcardsPage() {
-  const [deck, setDeck] = useState(() => shuffle(cards));
-  const [index, setIndex] = useState(0);
+  const [deck] = useState(() => shuffle(taggedCards));
+  return <TrainingSession items={deck} topics={(item) => [item.topic]}>
+    {(item, _index, next) => <Flashcard item={item} next={next} />}
+  </TrainingSession>;
+}
+
+function Flashcard({ item, next }: { item: TrainingCard; next: () => void }) {
+  const { card } = item;
   const [flipped, setFlipped] = useState(false);
-
-  const card = deck[index];
-
-  function next() {
-    if (index + 1 >= deck.length) {
-      setDeck(shuffle(cards));
-      setIndex(0);
-    } else {
-      setIndex((i) => i + 1);
-    }
-    setFlipped(false);
-  }
-
   return (
     <section className="flashcard-page">
-      <div className="quiz-topbar">
-        <span>Kort {index + 1} / {deck.length}</span>
-        <button type="button" onClick={() => {
-          setDeck(shuffle(cards));
-          setIndex(0);
-          setFlipped(false);
-        }}>Blanda</button>
-      </div>
+      <TrainingLessonSource source={item} />
 
       <button
         type="button"
@@ -52,8 +48,9 @@ export default function FlashcardsPage() {
       >
         {!flipped ? (
           <>
-            <span className="muted">Begrepp</span>
+            <span className="muted">{item.pageId ? "Fråga" : "Begrepp"}</span>
             <strong>{card[0]}</strong>
+            {item.pageId && <pre><code>{card[2]}</code></pre>}
             <small>Klicka för att vända</small>
           </>
         ) : (

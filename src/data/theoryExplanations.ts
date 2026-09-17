@@ -13,7 +13,7 @@ export const theoryExplanations: Record<string, string[]> = {
   "react-p2": [
     "JSX är syntaxen som gör att du kan skriva HTML-liknande kod inuti JavaScript eller TypeScript. Det ser ut som HTML, men det är egentligen ett sätt att beskriva vilket gränssnitt React ska skapa.",
     "Inuti JSX kan du använda JavaScript-uttryck genom att skriva dem inom `{ }`. Om du exempelvis har `const name = \"Anna\"` kan du skriva `<h1>Hej {name}</h1>`. React sätter då in värdet på rätt plats.",
-    "En komponent måste returnera giltig JSX. Om du vill returnera flera element behöver de ligga i ett gemensamt element eller i ett fragment `<>...</>`.",
+    "En komponent kan returnera JSX men också exempelvis text, tal, en array av React-noder eller null. Flera JSX-element intill varandra behöver omslutas av ett gemensamt element eller ett fragment `<>...</>`; element i en array behöver stabila keys.",
   ],
   "react-p3": [
     "Komposition betyder att du bygger en större sida genom att kombinera flera mindre komponenter. I stället för att skriva hela sidan i en enda stor funktion kan du exempelvis ha `Header`, `Sidebar`, `UserCard` och `Footer`.",
@@ -21,7 +21,7 @@ export const theoryExplanations: Record<string, string[]> = {
     "Det här gör koden lättare att läsa, testa och återanvända. Om samma UI-del används på flera ställen behöver du bara underhålla komponenten på ett ställe.",
   ],
   "react-p4": [
-    "Så bygger du profilen i uppgiften: skapa funktionen Profile och returnera en div som innehåller en h2 för namnet, ett p-element för titeln och en button för knappen. Elementen ligger tillsammans inuti div eftersom komponenten behöver returnera ett gemensamt överordnat element.",
+    "Så bygger du profilen i uppgiften: skapa funktionen Profile och returnera en div som innehåller en h2 för namnet, ett p-element för titeln och en button för knappen. Här samlar div de intilliggande JSX-elementen. Ett fragment kan också användas om du inte vill lägga till ett extra DOM-element.",
     "Själva knappen skapas med <button type=\"button\">Visa profil</button>. Texten mellan starttaggen och sluttaggen blir texten på knappen. type=\"button\" gör att knappen inte råkar skicka ett formulär om den senare placeras i ett sådant. Detta räcker för att visa en knapp; för att den också ska göra något behöver du koppla ett klick till kod.",
     "I exemplet skapar vi därför funktionen handleClick inuti Profile, före return. Den kör window.alert(\"Hej från Sofia!\"), som visar en meddelanderuta. På knappen skriver vi onClick={handleClick}. När användaren klickar anropar React funktionen och meddelanderutan visas. Skriv inte onClick={handleClick()}, eftersom det skulle köra funktionen direkt när komponenten renderas.",
     "För att profilen ska synas måste den också användas på sidan. Exemplet kan skrivas i App.tsx i ett befintligt React-projekt: App returnerar <Profile /> och visar därmed namn, titel och knapp. Har du redan en App-komponent lägger du <Profile /> i dess JSX. Profile börjar med stor bokstav så att React känner igen den som en egen komponent.",

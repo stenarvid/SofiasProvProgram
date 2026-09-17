@@ -10,6 +10,7 @@ export type MissedQuestion = {
   source: "global" | "page";
   type: "single" | "multi";
   question: string;
+  code?: string;
   options: string[];
   correctAnswers: number[];
   explanation: string;
@@ -52,6 +53,7 @@ function buildDefinitionIndexes() {
           source: "page",
           type: question.type,
           question: question.question,
+          code: question.code,
           options: question.options,
           correctAnswers: question.correctAnswers,
           explanation: question.explanation
@@ -90,6 +92,7 @@ export function getAllMissedQuestions(): MissedQuestion[] {
         source: stat.reviewSnapshot.source,
         type: stat.reviewSnapshot.type,
         question: stat.question,
+        code: stat.reviewSnapshot.code,
         options: stat.reviewSnapshot.options,
         correctAnswers: stat.reviewSnapshot.correctAnswers,
         explanation: stat.reviewSnapshot.explanation,
