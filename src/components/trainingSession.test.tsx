@@ -19,6 +19,9 @@ import ApiSimulatorPage from "./ApiSimulatorPage";
 import ConceptMapPage from "./ConceptMapPage";
 import { lessonQuickErrors, lessonReadingQuestions, trainingLessons } from "../data/lessonTraining";
 import { studyTopics } from "../data/studyTopics";
+import { MemoryRouter } from "react-router-dom";
+import TopicsPage from "./TopicsPage";
+import { recordCodeAttempt } from "../data/codeProgress";
 
 vi.mock("@monaco-editor/react", () => ({
   default: ({ value, onChange }: { value: string; onChange: (value: string) => void }) =>
@@ -219,4 +222,114 @@ it("filters reference maps by subject", async () => {
   await select(container.querySelector("select")!, "React Query");
   expect(container.querySelectorAll(".concept-flow")).toHaveLength(1);
   expect(container.querySelector(".concept-flow h3")?.textContent).toBe("Server state");
+});
+
+async function openLesson(topic = "react", page = 1) {
+  await act(async () => root.render(<MemoryRouter initialEntries={[`/topics?topic=${topic}&page=${page}`]}><TopicsPage /></MemoryRouter>));
+  if (!container.querySelector(".study-tabs")) {
+    await act(async () => container.querySelector<HTMLButtonElement>(".topic-practice-toggle")!.click());
+  }
+}
+
+it("always shows lesson question navigation and retains drafts and checked answers", async () => {
+  await openLesson();
+  expect(button("← Föregående fråga")?.disabled).toBe(true);
+  expect(button("Nästa fråga →")?.disabled).toBe(false);
+  const first = container.querySelector<HTMLButtonElement>(".page-quiz-option")!;
+  const firstText = first.textContent;
+  await act(async () => first.click());
+  await click("Nästa fråga →");
+  const multi = [...container.querySelectorAll<HTMLButtonElement>(".page-quiz-option")];
+  await act(async () => { multi[0].click(); multi[1].click(); });
+  expect(container.querySelectorAll(".page-quiz-option.selected")).toHaveLength(2);
+  await click("← Föregående fråga");
+  expect(container.querySelector(".page-quiz-option.selected")?.textContent).toBe(firstText);
+  await click("Rätta svar");
+  const feedback = container.querySelector(".quiz-result-block p")!.textContent;
+  await click("Nästa fråga →");
+  expect(container.querySelectorAll(".page-quiz-option.selected")).toHaveLength(2);
+  await click("Nästa fråga →");
+  expect(button("Nästa fråga →")?.disabled).toBe(true);
+  expect(button("← Föregående fråga")?.disabled).toBe(false);
+  await click("← Föregående fråga");
+  await click("← Föregående fråga");
+  expect(button("Rätta svar")?.disabled).toBe(true);
+  expect(container.querySelector(".quiz-result-block p")?.textContent).toBe(feedback);
+});
+
+it("retrying one lesson question preserves other selections and option order", async () => {
+  await openLesson();
+  const correct = studyTopics[0].pages[0].quiz.options[studyTopics[0].pages[0].quiz.answer];
+  const options = [...container.querySelectorAll<HTMLButtonElement>(".page-quiz-option")];
+  const wrong = options.find(option => !option.textContent?.endsWith(correct))!;
+  await act(async () => wrong.click());
+  await click("Rätta svar");
+  await click("Nästa fråga →");
+  const option = container.querySelector<HTMLButtonElement>(".page-quiz-option")!;
+  await act(async () => option.click());
+  const order = [...container.querySelectorAll(".page-quiz-option")].map(item => item.textContent);
+  await click("← Föregående fråga");
+  await click("Försök igen");
+  expect(container.querySelector(".quiz-result-block")).toBeNull();
+  expect(container.querySelector(".page-quiz-option.selected")).toBeNull();
+  await click("Nästa fråga →");
+  expect([...container.querySelectorAll(".page-quiz-option")].map(item => item.textContent)).toEqual(order);
+  expect(container.querySelectorAll(".page-quiz-option.selected")).toHaveLength(1);
+});
+
+it("prefills the lesson editor and keeps edits when switching practice tabs", async () => {
+  await openLesson("react", 4);
+  await click("Kod");
+  const editor = container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Kod"]')!;
+  expect(editor.value).toBe(studyTopics[0].pages[3].code);
+  await setText(editor, "my edited solution");
+  await click("Quiz");
+  await click("Kod");
+  expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Kod"]')!.value).toBe("my edited solution");
+});
+
+it("loads saved code instead of overwriting it with the example", async () => {
+  recordCodeAttempt("theory-code-react-p1", "React", "Hello", 50, false, "saved solution");
+  await openLesson();
+  await click("Kod");
+  expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Kod"]')!.value).toBe("saved solution");
+});
+
+it("prioritizes an explicitly opened code-library draft over saved code", async () => {
+  recordCodeAttempt("theory-code-react-p1", "React", "Hello", 50, false, "saved solution");
+  localStorage.setItem("provtraning-code-draft-load-v1", JSON.stringify({pageId: "react-p1", code: "chosen draft"}));
+  await openLesson();
+  expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Kod"]')!.value).toBe("chosen draft");
+});
+
+it("leaves explanation answers empty and places quiz code after feedback and controls", async () => {
+  await openLesson("server", 1);
+  await click("Kod");
+  expect(container.querySelector<HTMLTextAreaElement>(".page-self-answer")!.value).toBe("");
+  await click("Quiz");
+  await act(async () => container.querySelector<HTMLButtonElement>(".page-quiz-option")!.click());
+  await click("Rätta svar");
+  const card = container.querySelector(".study-tab-panel .study-focus-card")!;
+  expect(card.querySelector(".quiz-result-block")).not.toBeNull();
+  expect(card.lastElementChild?.tagName).toBe("PRE");
+  expect(button("Nästa fråga →")!.parentElement).toBe(button("Rätta svar")!.parentElement);
+});
+
+it("loads each page's starter and preserves even an intentionally emptied draft on return", async () => {
+  const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  try {
+    await openLesson();
+    await click("Kod");
+    await setText(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Kod"]')!, "");
+    await click("Nästa →");
+    await act(async () => container.querySelector<HTMLButtonElement>(".topic-practice-toggle")!.click());
+    await click("Kod");
+    expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Kod"]')!.value).toBe(studyTopics[0].pages[1].code);
+    await click("← Föregående");
+    await act(async () => container.querySelector<HTMLButtonElement>(".topic-practice-toggle")!.click());
+    await click("Kod");
+    expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Kod"]')!.value).toBe("");
+  } finally {
+    scroll.mockRestore();
+  }
 });

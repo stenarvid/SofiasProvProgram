@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import LessonPreparation from "./LessonPreparation";
+import LessonAudio from "./LessonAudio";
 import { Link, useSearchParams } from "react-router-dom";
 import { studyTopics as topics } from "../data/studyTopics";
 import { getTheoryExplanation, getExampleWalkthrough } from "../data/theoryExplanations";
@@ -8,7 +9,7 @@ import Editor, { type OnMount } from "@monaco-editor/react";
 import { recordAnswer } from "../data/progress";
 import { recordQuestionResult } from "../data/questionProgress";
 import { saveTestResult } from "../data/history";
-import { recordCodeAttempt } from "../data/codeProgress";
+import { getCodeProgress, recordCodeAttempt } from "../data/codeProgress";
 import { recordRecentActivity } from "../data/recentActivity";
 import { gradePageCode, getPageCodeGradeMode, getSelfAssessmentGuidance } from "../data/pageCodeGrader";
 import type { GradeResult } from "../data/codeGrader";
@@ -32,8 +33,7 @@ export default function TopicsPage() {
   const [pageIndex, setPageIndex] = useState(initialPage);
   const [quizSession, setQuizSession] = useState(0);
   const [quizIndex, setQuizIndex] = useState(0);
-  const [quizSelected, setQuizSelected] = useState<number[]>([]);
-  const [quizChecked, setQuizChecked] = useState(false);
+  const [quizSelections, setQuizSelections] = useState<Record<number, number[]>>({});
   const [quizResults, setQuizResults] = useState<Record<number, boolean>>({});
   const [code, setCode] = useState("");
   const [codeSaved, setCodeSaved] = useState(false);
@@ -56,6 +56,7 @@ export default function TopicsPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const currentPageIdRef = useRef<string>("");
+  const codeDraftsRef = useRef<Record<string, string>>({});
 
   const selectedTopic = useMemo(
     () => topics.find((topic) => topic.slug === selectedSlug) ?? topics[0],
@@ -96,6 +97,8 @@ export default function TopicsPage() {
     [page, selectedTopic, quizSession]
   );
   const currentPageQuiz = pageQuizQuestions[Math.min(quizIndex, pageQuizQuestions.length - 1)];
+  const quizSelected = quizSelections[quizIndex] ?? [];
+  const quizChecked = Object.prototype.hasOwnProperty.call(quizResults, quizIndex);
 
   useEffect(() => {
     if (safePageIndex !== pageIndex) {
@@ -137,6 +140,10 @@ export default function TopicsPage() {
   }, []);
 
   useEffect(() => {
+    const saved = getCodeProgress()[`theory-code-${page.id}`]?.lastCode;
+    const starter = page.guidance?.format === "explanation" ? "" : page.code;
+    setCode(codeDraftsRef.current[page.id] ?? saved ?? starter);
+    setCodeSaved(false);
     try {
       const raw = localStorage.getItem("provtraning-code-draft-load-v1");
       if (!raw) return;
@@ -144,6 +151,7 @@ export default function TopicsPage() {
       const draft = JSON.parse(raw) as { pageId?: string; code?: string };
 
       if (draft.pageId === page.id && typeof draft.code === "string") {
+        codeDraftsRef.current[page.id] = draft.code;
         setCode(draft.code);
         setCodeSaved(false);
         setPageCodeGrade(null);
@@ -155,7 +163,7 @@ export default function TopicsPage() {
     } catch {
       localStorage.removeItem("provtraning-code-draft-load-v1");
     }
-  }, [page.id]);
+  }, [page]);
 
   useEffect(() => {
     // A result from another theory page must never remain visible after navigation.
@@ -179,10 +187,8 @@ export default function TopicsPage() {
 
   function resetPractice() {
     setQuizIndex(0);
-    setQuizSelected([]);
-    setQuizChecked(false);
+    setQuizSelections({});
     setQuizResults({});
-    setCode("");
     setCodeSaved(false);
     setPageCodeGrade(null);
     setPageCodeGradePageId(null);
@@ -195,6 +201,11 @@ export default function TopicsPage() {
     setSelectedSlug(slug);
     setPageIndex(0);
     resetPractice();
+  }
+
+  function editCode(value: string) {
+    codeDraftsRef.current[page.id] = value;
+    setCode(value);
   }
 
   function goToPage(next: number) {
@@ -221,39 +232,33 @@ export default function TopicsPage() {
   }
 
   function retryPageQuiz() {
-    setQuizSession(value => value + 1);
-    setQuizSelected([]);
-    setQuizChecked(false);
+    setQuizSelections(current => ({ ...current, [quizIndex]: [] }));
+    setQuizResults(current => {
+      const next = { ...current };
+      delete next[quizIndex];
+      return next;
+    });
   }
 
   function restartPageQuiz() {
     setQuizSession(value => value + 1);
     setQuizIndex(0);
-    setQuizSelected([]);
-    setQuizChecked(false);
+    setQuizSelections({});
     setQuizResults({});
   }
 
-  function nextPageQuizQuestion() {
-    if (quizIndex >= pageQuizQuestions.length - 1) return;
-    setQuizIndex((value) => value + 1);
-    setQuizSelected([]);
-    setQuizChecked(false);
+  function goToQuizQuestion(next: number) {
+    setQuizIndex(Math.max(0, Math.min(pageQuizQuestions.length - 1, next)));
   }
 
   function toggleQuizOption(optionIndex: number) {
     if (quizChecked) return;
-
-    if (currentPageQuiz.type === "single") {
-      setQuizSelected([optionIndex]);
-      return;
-    }
-
-    setQuizSelected((current) =>
-      current.includes(optionIndex)
-        ? current.filter((value) => value !== optionIndex)
-        : [...current, optionIndex]
-    );
+    setQuizSelections(current => {
+      const selected = current[quizIndex] ?? [];
+      return { ...current, [quizIndex]: currentPageQuiz.type === "single"
+        ? [optionIndex]
+        : selected.includes(optionIndex) ? selected.filter(value => value !== optionIndex) : [...selected, optionIndex] };
+    });
   }
 
   function updatePageNote(note: string) {
@@ -269,7 +274,6 @@ export default function TopicsPage() {
       currentPageQuiz.correctAnswers
     );
 
-    setQuizChecked(true);
     setQuizResults((current) => ({ ...current, [quizIndex]: correct }));
 
     const progressId = `theory-${page.id}-q${quizIndex + 1}`;
@@ -537,6 +541,7 @@ export default function TopicsPage() {
         </div>
 
         <article className="topic-book-page">
+          <LessonAudio key={`${page.id}-${theoryMode}`} page={page} mode={theoryMode} />
           <LessonPreparation page={page} topicSlug={selectedTopic.slug} />
           <section className="topic-book-section theory-reading-card">
             <div className="theory-section-heading">
@@ -742,14 +747,13 @@ export default function TopicsPage() {
                       >
                         Rätta svar
                       </button>
-                      {quizChecked && quizIndex < pageQuizQuestions.length - 1 && (
-                        <button type="button" onClick={nextPageQuizQuestion}>
-                          Nästa fråga →
-                        </button>
-                      )}
+                      <button type="button" onClick={() => goToQuizQuestion(quizIndex - 1)} disabled={quizIndex === 0}>
+                        ← Föregående fråga
+                      </button>
+                      <button type="button" onClick={() => goToQuizQuestion(quizIndex + 1)} disabled={quizIndex === pageQuizQuestions.length - 1}>
+                        Nästa fråga →
+                      </button>
                     </div>
-
-                    {currentPageQuiz.code && <pre><code>{currentPageQuiz.code}</code></pre>}
 
                     {quizChecked && (
                       <div className="quiz-result-block">
@@ -779,7 +783,7 @@ export default function TopicsPage() {
                                   Object.entries(quizResults)
                                     .filter(([key, value]) => Number(key) !== quizIndex && value)
                                     .length + (quizResults[quizIndex] ? 1 : 0)
-                                }/{pageQuizQuestions.length} rätt
+                                }/{pageQuizQuestions.length} rätt · {Object.keys(quizResults).length}/{pageQuizQuestions.length} rättade
                               </span>
                               <button type="button" onClick={restartPageQuiz}>
                                 Gör om sidquizet
@@ -789,6 +793,7 @@ export default function TopicsPage() {
                         </div>
                       </div>
                     )}
+                    {currentPageQuiz.code && <pre><code>{currentPageQuiz.code}</code></pre>}
                   </article>
                 )}
 
@@ -797,6 +802,7 @@ export default function TopicsPage() {
                     <h3>Din uppgift</h3>
                     {page.codeTask.split("\n\n").map((part, index) => <p key={index}>{part}</p>)}
                     <p className="muted">Kodexemplet visar grunden. För att lösa hela uppgiften behöver du också göra delen Tillämpa själv och kontrollera resultatet.</p>
+                    {page.guidance?.format !== "explanation" && <p className="muted">Editorn börjar med kodexemplet, eller ditt tidigare svar om ett sådant finns. Bygg vidare på koden med delen Tillämpa själv.</p>}
                     {page.guidance && <div className="reference-answer">
                       <strong>Kontrollera ditt resultat</strong>
                       <ul>{page.guidance.checks.map(check => <li key={check}>{check}</li>)}</ul>
@@ -824,7 +830,7 @@ export default function TopicsPage() {
                             theme="vs-dark"
                             value={code}
                             onChange={(value) => {
-                              setCode(value ?? "");
+                              editCode(value ?? "");
                               setCodeSaved(false);
                               setPageCodeGrade(null);
                               setPageCodeGradePageId(null);
@@ -897,7 +903,7 @@ export default function TopicsPage() {
                             theme="vs-dark"
                             value={code}
                             onChange={(value) => {
-                              setCode(value ?? "");
+                              editCode(value ?? "");
                               setCodeSaved(false);
                             }}
                             options={{ minimap: { enabled: false }, fontSize: 14 }}
@@ -907,7 +913,7 @@ export default function TopicsPage() {
                           rows={8}
                           value={code}
                           onChange={(event) => {
-                            setCode(event.target.value);
+                            editCode(event.target.value);
                             setCodeSaved(false);
                           }}
                           placeholder={page.guidance?.format === "files" ? "Skriv filnamn och kod i separata avsnitt..." : "Skriv din förklaring med egna ord..."}
