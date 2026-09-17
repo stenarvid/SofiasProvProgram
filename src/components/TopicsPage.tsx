@@ -733,14 +733,21 @@ export default function TopicsPage() {
                       })}
                     </div>
 
-                    <button
-                      type="button"
-                      className="primary-button auto-width"
-                      onClick={checkPageQuiz}
-                      disabled={quizSelected.length === 0 || quizChecked}
-                    >
-                      Rätta svar
-                    </button>
+                    <div className="inline-actions">
+                      <button
+                        type="button"
+                        className="primary-button auto-width"
+                        onClick={checkPageQuiz}
+                        disabled={quizSelected.length === 0 || quizChecked}
+                      >
+                        Rätta svar
+                      </button>
+                      {quizChecked && quizIndex < pageQuizQuestions.length - 1 && (
+                        <button type="button" onClick={nextPageQuizQuestion}>
+                          Nästa fråga →
+                        </button>
+                      )}
+                    </div>
 
                     {currentPageQuiz.code && <pre><code>{currentPageQuiz.code}</code></pre>}
 
@@ -765,11 +772,7 @@ export default function TopicsPage() {
                             </button>
                           )}
 
-                          {quizIndex < pageQuizQuestions.length - 1 ? (
-                            <button type="button" onClick={nextPageQuizQuestion}>
-                              Nästa fråga →
-                            </button>
-                          ) : (
+                          {quizIndex === pageQuizQuestions.length - 1 && (
                             <>
                               <span className="page-quiz-summary">
                                 Resultat: {
