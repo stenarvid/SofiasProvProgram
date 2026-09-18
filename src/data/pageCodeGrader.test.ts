@@ -39,14 +39,14 @@ describe("pageCodeGrader", () => {
   });
 
   it("does not award a pass to unchanged TypeScript errors or an empty answer", async () => {
-    expect(getPageCodeGradeMode("typescript-p5")).toBe("self");
+    expect(getPageCodeGradeMode("typescript-p5")).toBe("auto");
     for (const code of ["", 'const age: number = "20"; const active: boolean = "true"; const scores: number[] = [10, "20", 30];']) {
       expect((await gradePageCode("typescript-p5", code)).passed).toBe(false);
     }
   });
 
   it("does not award a pass merely for mentioning HTTP status codes in wrong roles", async () => {
-    expect(getPageCodeGradeMode("server-p3")).toBe("self");
+    expect(getPageCodeGradeMode("server-p3")).toBe("quiz");
     expect((await gradePageCode("server-p3", 'const success = 404; const created = 200; const missing = 201;')).passed).toBe(false);
   });
 
@@ -112,9 +112,9 @@ describe("pageCodeGrader", () => {
     expect(result.passed).toBe(true);
   });
 
-  it("marks explanation tasks as self-assessed", () => {
-    expect(getPageCodeGradeMode("query-p4")).toBe("self");
-    expect(getPageCodeGradeMode("server-p4")).toBe("self");
+  it("uses graded application questions for explanation tasks", () => {
+    expect(getPageCodeGradeMode("query-p4")).toBe("quiz");
+    expect(getPageCodeGradeMode("server-p4")).toBe("quiz");
   });
 
   it("grades react-p4 Profile independently from react-p2", async () => {

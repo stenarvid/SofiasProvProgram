@@ -75,7 +75,7 @@ describe("worked study lessons", () => {
     const failures: string[] = [];
     for (const page of pages.filter(page => getPageCodeGradeMode(page.id) === "auto")) {
       const result = await gradePageCode(page.id, page.code);
-      const baseFailures = result.tests.filter(test => test.name !== "Tillämpa själv" && !test.passed);
+      const baseFailures = result.tests.filter(test => !test.name.startsWith("Tillämpa själv") && !test.passed);
       if (result.compileError || baseFailures.length) failures.push(`${page.id}: ${result.compileError ?? baseFailures.map(test => test.details).join(", ")}`);
       expect(result.passed, page.id).toBe(false);
     }

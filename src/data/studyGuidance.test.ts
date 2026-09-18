@@ -27,7 +27,7 @@ describe("lesson prerequisites and assignment alignment", () => {
 
   it("does not automatically approve validation merely because it is mentioned after fetch", async () => {
     for (const id of ["zod-p4", "forms-p3"]) {
-      expect(getPageCodeGradeMode(id)).toBe("self");
+      expect(getPageCodeGradeMode(id)).toBe("auto");
       const result = await gradePageCode(id, `async function handleSubmit() {
         await fetch('/api/users');
         schema.safeParse({ name, email });
@@ -36,9 +36,9 @@ describe("lesson prerequisites and assignment alignment", () => {
     }
   });
 
-  it("keeps multi-file answers out of a single-file automatic grader", () => {
+  it("supports automatic grading of separate file sections", () => {
     for (const page of pages.filter(page => page.guidance?.format === "files")) {
-      expect(getPageCodeGradeMode(page.id), page.id).toBe("self");
+      expect(getPageCodeGradeMode(page.id), page.id).toBe("auto");
     }
   });
 });

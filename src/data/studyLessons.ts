@@ -18,6 +18,47 @@ export type StudyLesson = {
 };
 
 export const studyLessons: Record<string, StudyLesson> = {
+  "react-p5": {
+    code: `const tokens = {
+  primary: "#174ea6",
+  onPrimary: "#ffffff",
+  spacing: 12,
+  radius: 6
+};
+
+function PrimaryButton({ label }: { label: string }) {
+  return (
+    <button type="button" style={{
+      backgroundColor: tokens.primary,
+      color: tokens.onPrimary,
+      padding: tokens.spacing,
+      borderRadius: tokens.radius
+    }}>
+      {label}
+    </button>
+  );
+}
+
+export default function App() {
+  return (
+    <>
+      <PrimaryButton label="Spara" />
+      <PrimaryButton label="Fortsätt" />
+    </>
+  );
+}`,
+    walkthrough: [
+      "Exemplet är en egen liten illustration av principerna och använder bara React, inte något av de tre externa biblioteken. Skriv koden i App.tsx i ett befintligt React-projekt. tokens samlar namngivna designvärden. primary är knappens bakgrund, onPrimary textfärgen, spacing det inre avståndet och radius hörnens rundning. Tal för padding och borderRadius blir här pixlar i Reacts style-objekt.",
+      "PrimaryButton samlar utseende och HTML i en återanvändbar komponent. label är en prop: ett värde som skickas från App till knappen. Typen { label: string } säger att texten måste vara en sträng. App använder samma komponent två gånger med olika etiketter. Resultatet är två knappar som ser enhetliga ut men har olika text. En riktig button behåller webbläsarens grundläggande tangentbordsstöd; ta inte bort dess synliga fokusmarkering.",
+      "Ändra tokens.radius till 16 och kontrollera att båda knapparna får rundare hörn. Det visar varför gemensamma värden är lättare att underhålla än separata hårdkodade stilar. Knapparna har ännu ingen klickhantering. Ett fullständigt designsystem behöver även dokumenterade användningsregler, varianter och tillstånd som disabled samt tester av tillgänglighet. Material Design, Carbon och Fluent 2 visar hur sådana gemensamma regler kan kopplas till färdiga React-komponenter. Bibliotekens installation, stilar och eventuella providers behöver följa respektive dokumentation."
+    ],
+    questions: [
+      ["Vad händer med knapparna när tokens.radius ändras?", "Båda får den nya hörnradien", "Bara Spara ändras", "Etiketterna byter plats", "React installerar Material UI", "Båda använder PrimaryButton, vars borderRadius läser samma gemensamma token."],
+      ["Vilken koppling mellan designsystem och React-bibliotek är korrekt?", "Material Design → Material UI, Carbon → Carbon React, Fluent 2 → Fluent UI", "Material Design → React Router, Carbon → Zod, Fluent 2 → Hono", "Alla tre är inbyggda i React", "Designsystem ersätter JSX med SQL", "De tre systemen har React-bibliotek som omsätter designregler i återanvändbara komponenter."]
+    ],
+    statements: ["Design tokens kan samla gemensamma färger och avstånd.", "Ett designsystem omfattar även dokumentation och användningsregler.", "React kräver att alla appar använder Material Design.", "Ett komponentbibliotek garanterar att hela appen är tillgänglig."],
+    statementExplanation: "React kan användas med olika designsystem eller egna komponenter. Gemensamma byggblock hjälper, men den färdiga sidan behöver fortfarande kontrolleras för tillgänglighet."
+  },
   ...webLessons,
   ...libraryLessons,
   ...formLessons,

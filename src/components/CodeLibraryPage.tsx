@@ -126,7 +126,7 @@ export default function CodeLibraryPage() {
                   <div className="code-library-number">{index + 1}</div>
                   <div>
                     <span className="study-tool-label">
-                      {mode === "auto" ? "Automatisk rättning" : "Självbedömning"}
+                      {mode === "quiz" ? "Rättningsbara frågor" : "Automatisk rättning"}
                     </span>
                     <h3>{page.title}</h3>
                   </div>

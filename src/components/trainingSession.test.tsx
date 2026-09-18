@@ -302,10 +302,13 @@ it("prioritizes an explicitly opened code-library draft over saved code", async 
   expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Kod"]')!.value).toBe("chosen draft");
 });
 
-it("leaves explanation answers empty and places quiz code after feedback and controls", async () => {
+it("offers graded questions for explanations and places theory quiz code after feedback and controls", async () => {
   await openLesson("server", 1);
   await click("Kod");
-  expect(container.querySelector<HTMLTextAreaElement>(".page-self-answer")!.value).toBe("");
+  expect(container.querySelector(".page-self-answer")).toBeNull();
+  expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(6);
+  expect(button("Rätta")!.disabled).toBe(true);
+  expect(container.textContent).not.toContain("Jag har jämfört mitt svar");
   await click("Quiz");
   await act(async () => container.querySelector<HTMLButtonElement>(".page-quiz-option")!.click());
   await click("Rätta svar");

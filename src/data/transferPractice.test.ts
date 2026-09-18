@@ -4,14 +4,15 @@ import { studyLessons } from "./studyLessons";
 import { studyGuidance } from "./studyGuidance";
 import { transferPractice } from "./transferPractice";
 import { gradePageCode, getPageCodeGradeMode } from "./pageCodeGrader";
+import { extendedCodePages } from "./extendedPageGrader";
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 it("adds a required application task to every lesson without changing the teaching example", () => {
   expect(Object.keys(transferPractice).sort()).toEqual(studyTopics.flatMap(topic => topic.pages.map(page => page.id)).sort());
   for (const [id, extension] of Object.entries(transferPractice)) {
-    expect(studyGuidance[id].task).toContain(extension.task);
+    expect(studyGuidance[id].task).toBe(`Tillämpa själv: ${extension.task}`);
     expect(studyGuidance[id].checks.join(" ")).toContain(extension.check);
-    if (getPageCodeGradeMode(id) === "auto") expect(extension.pattern, id).toBeDefined();
+    if (getPageCodeGradeMode(id) === "auto" && !extendedCodePages.includes(id)) expect(extension.pattern, id).toBeDefined();
   }
 });
 
@@ -19,7 +20,7 @@ it.each(Object.keys(studyLessons).filter(id => getPageCodeGradeMode(id) === "aut
   "%s does not pass when submitting the unchanged lesson example", async id => {
     const result = await gradePageCode(id, studyLessons[id].code);
     expect(result.passed).toBe(false);
-    expect(result.tests.find(test => test.name === "Tillämpa själv")?.passed).toBe(false);
+    expect(result.tests.some(test => test.name.startsWith("Tillämpa själv") && !test.passed)).toBe(true);
   }
 );
 

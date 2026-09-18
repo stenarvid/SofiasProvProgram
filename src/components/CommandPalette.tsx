@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { studyTopics } from "../data/studyTopics";
 import { questionBank } from "../data/questionBank";
+import { terminology } from "../data/terminology";
 
 type SearchItem = {
   id: string;
@@ -67,7 +68,13 @@ function buildIndex(): SearchItem[] {
     };
   });
 
-  return [...navigationItems, ...theory, ...quizTopics];
+  const terms: SearchItem[] = studyTopics.map(topic => ({
+    id: `terminology-${topic.slug}`, type: "Navigation", title: `Terminologi · ${topic.title}`,
+    description: "Begreppsträning med rättning och ordlista",
+    keywords: (terminology[topic.slug] ?? []).map(item => `${item.term} ${item.definition}`).join(" "),
+    to: `/terminology/${topic.slug}`
+  }));
+  return [...navigationItems, ...terms, ...theory, ...quizTopics];
 }
 
 export default function CommandPalette() {

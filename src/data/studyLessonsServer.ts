@@ -1,6 +1,34 @@
 import type { StudyLesson } from "./studyLessons";
 
 export const serverLessons: Record<string, StudyLesson> = {
+  "server-p5": {
+    code: `// React-sidan är laddad från https://app.example.test.
+// Webbläsaren skickar GET https://app.example.test/api/users.
+// En redan konfigurerad reverse proxy tar emot anropet.
+// Proxyn skickar vidare till http://127.0.0.1:3000/api/users.
+// Backendens JSON-svar går tillbaka genom proxyn.
+// 127.0.0.1 avser här proxyns maskin, där backend också körs.
+
+async function getUsers() {
+  const response = await fetch("/api/users");
+  if (!response.ok) throw new Error("Kunde inte hämta användare");
+  return response.json();
+}
+
+// Anropa getUsers() från klienten när du vill hämta listan.
+// Funktionen konfigurerar eller startar ingen proxy.`,
+    walkthrough: [
+      "Utgå från en React-app på https://app.example.test och en separat backend på port 3000. Webbplatsens publika adress går till en reverse proxy, exempelvis NGINX. I just detta exempel kör proxyn och backend på samma maskin, så proxyn kan nå backend via 127.0.0.1. På separata maskiner eller i separata containrar måste proxyn i stället använda en adress som faktiskt når backend.",
+      "När getUsers anropas tolkar webbläsaren /api/users relativt sidans origin och skickar anropet till den publika adressen. Proxyn behöver vara konfigurerad att vidarebefordra /api/ till backend. Här bevaras sökvägen, så backend tar emot /api/users och producerar JSON-svaret. Svaret går tillbaka via proxyn innan response.json() läser det i klienten. Det sker ingen redirect som ber webbläsaren anropa den interna porten.",
+      "Koden visar klientens del av kedjan, inte en färdig proxyinstallation. Funktionen skickar inget förrän den anropas, och backend samt proxy måste finnas separat. I exemplet kan proxyn avsluta HTTPS-förbindelsen från webbläsaren och använda HTTP lokalt till backend. Det kallas TLS-terminering; anslutningen vidare till backend kan också använda HTTPS. API och sida nås via samma origin här, men en proxy gör inte automatiskt alla anrop till andra origins tillåtna."
+    ],
+    questions: [
+      ["Vilken server kontaktar webbläsaren först när getUsers anropas i exemplet?", "Reverse proxyn på app.example.test", "Backend direkt på 127.0.0.1:3000", "Databasen direkt", "Ingen server eftersom URL:en är relativ", "Den relativa URL:en använder sidans publika origin. Proxyn tar emot anropet där och kontaktar backend separat."],
+      ["Vilken beskrivning skiljer reverse proxy från forward proxy?", "Reverse proxy företräder servrar; forward proxy företräder klienter", "Reverse proxy skickar bara responses och aldrig requests", "Forward proxy måste vara en React-komponent", "Det är två namn för en HTTP-redirect", "Båda är mellanhänder, men de har olika roller: framför tjänsternas servrar respektive för klienters utgående anrop."]
+    ],
+    statements: ["En reverse proxy kan skicka vidare anrop till en backend på en intern port.", "Backendens svar kan passera proxyn innan klienten får det.", "En reverse proxy ersätter automatiskt all validering och behörighetskontroll.", "Klienten måste alltid omdirigeras till backendens interna adress."],
+    statementExplanation: "Proxyn vidarebefordrar normalt trafiken själv. Backend behöver fortfarande hantera sina säkerhets- och dataregler; en proxy är inte detsamma som en redirect."
+  },
   "hono-p1": {
     code: `import { Hono } from "hono";
 

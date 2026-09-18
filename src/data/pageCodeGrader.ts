@@ -3,6 +3,8 @@ import type { GradeResult, GradeTest } from "./codeGrader";
 import { gradeHello } from "./codeGrader";
 import { studyGuidance } from "./studyGuidance";
 import { transferPractice } from "./transferPractice";
+import { extendedCodePages, gradeExtendedPage } from "./extendedPageGrader";
+import { applicationQuestions } from "./applicationQuestions";
 
 type Rule = {
   name: string;
@@ -555,6 +557,8 @@ const specs: Record<string, PageGradeSpec> = {
 };
 
 export function getPageCodeGradeMode(pageId: string) {
+  if (applicationQuestions[pageId]) return "quiz";
+  if (extendedCodePages.includes(pageId)) return "auto";
   return specs[pageId]?.kind ?? "self";
 }
 
@@ -563,6 +567,7 @@ export function getSelfAssessmentGuidance(pageId: string) {
 }
 
 export async function gradePageCode(pageId: string, code: string): Promise<GradeResult> {
+  if (extendedCodePages.includes(pageId)) return gradeExtendedPage(pageId, code);
   const spec = specs[pageId];
 
   if (!spec || spec.kind === "self") {

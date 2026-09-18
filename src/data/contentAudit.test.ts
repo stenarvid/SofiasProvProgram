@@ -10,9 +10,9 @@ describe("study content audit", () => {
     topic.pages.map((page) => ({ topic: topic.title, ...page }))
   );
 
-  it("has the expected 14 subjects and 56 theory pages", () => {
+  it("has the expected 14 subjects and 58 theory pages", () => {
     expect(studyTopics).toHaveLength(14);
-    expect(allPages).toHaveLength(56);
+    expect(allPages).toHaveLength(58);
   });
 
   it("uses unique topic slugs and page ids", () => {
@@ -88,7 +88,7 @@ describe("study content audit", () => {
     expect(page?.code).toContain("function Hello()");
     expect(page?.code).toContain("<h1>Hej!</h1>");
     expect(page?.codeTask).toContain("Hello");
-    expect(page?.codeTask).toContain("Hej!");
+    expect(page?.codeTask).toContain("Jag tränar React");
   });
 
 

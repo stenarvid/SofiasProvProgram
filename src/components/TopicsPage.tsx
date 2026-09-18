@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import LessonPreparation from "./LessonPreparation";
 import LessonAudio from "./LessonAudio";
+import ApplicationPractice from "./ApplicationPractice";
 import { Link, useSearchParams } from "react-router-dom";
 import { studyTopics as topics } from "../data/studyTopics";
 import { getTheoryExplanation, getExampleWalkthrough } from "../data/theoryExplanations";
@@ -11,7 +12,7 @@ import { recordQuestionResult } from "../data/questionProgress";
 import { saveTestResult } from "../data/history";
 import { getCodeProgress, recordCodeAttempt } from "../data/codeProgress";
 import { recordRecentActivity } from "../data/recentActivity";
-import { gradePageCode, getPageCodeGradeMode, getSelfAssessmentGuidance } from "../data/pageCodeGrader";
+import { gradePageCode, getPageCodeGradeMode } from "../data/pageCodeGrader";
 import type { GradeResult } from "../data/codeGrader";
 import { getStudyPageQuizQuestions, isQuizSelectionCorrect } from "../data/studyPageQuiz";
 import {
@@ -36,7 +37,6 @@ export default function TopicsPage() {
   const [quizSelections, setQuizSelections] = useState<Record<number, number[]>>({});
   const [quizResults, setQuizResults] = useState<Record<number, boolean>>({});
   const [code, setCode] = useState("");
-  const [codeSaved, setCodeSaved] = useState(false);
   const [pageCodeGrade, setPageCodeGrade] = useState<GradeResult | null>(null);
   const [pageCodeGradePageId, setPageCodeGradePageId] = useState<string | null>(null);
   const [pageCodeGrading, setPageCodeGrading] = useState(false);
@@ -143,7 +143,6 @@ export default function TopicsPage() {
     const saved = getCodeProgress()[`theory-code-${page.id}`]?.lastCode;
     const starter = page.guidance?.format === "explanation" ? "" : page.code;
     setCode(codeDraftsRef.current[page.id] ?? saved ?? starter);
-    setCodeSaved(false);
     try {
       const raw = localStorage.getItem("provtraning-code-draft-load-v1");
       if (!raw) return;
@@ -153,7 +152,6 @@ export default function TopicsPage() {
       if (draft.pageId === page.id && typeof draft.code === "string") {
         codeDraftsRef.current[page.id] = draft.code;
         setCode(draft.code);
-        setCodeSaved(false);
         setPageCodeGrade(null);
         setPageCodeGradePageId(null);
         setPracticeOpen(true);
@@ -189,7 +187,6 @@ export default function TopicsPage() {
     setQuizIndex(0);
     setQuizSelections({});
     setQuizResults({});
-    setCodeSaved(false);
     setPageCodeGrade(null);
     setPageCodeGradePageId(null);
     setPageCodeGrading(false);
@@ -345,23 +342,7 @@ export default function TopicsPage() {
 
     setPageCodeGrade(result);
     setPageCodeGradePageId(gradingPageId);
-    setCodeSaved(true);
     setPageCodeGrading(false);
-  }
-
-  function saveSelfAssessedPractice() {
-    if (!code.trim()) return;
-
-    recordCodeAttempt(
-      `theory-code-${page.id}`,
-      selectedTopic.title,
-      `${selectedTopic.title} – ${page.title}`,
-      100,
-      true,
-      code
-    );
-
-    setCodeSaved(true);
   }
 
   useEffect(() => {
@@ -525,6 +506,9 @@ export default function TopicsPage() {
             <Link className="topic-checkpoint-link" to={`/checkpoint/${selectedTopic.slug}`}>
               Checkpoint
             </Link>
+            <Link className="topic-checkpoint-link" to={`/terminology/${selectedTopic.slug}`}>
+              Terminologi
+            </Link>
           </div>
         </div>
 
@@ -586,6 +570,19 @@ export default function TopicsPage() {
               </ul>
             )}
 
+            {page.flow && <figure className="lesson-flow">
+              <ol aria-label="Requestens väg">
+                {page.flow.steps.map(step => <li key={step}>{step}</li>)}
+              </ol>
+              <figcaption>{page.flow.caption}</figcaption>
+            </figure>}
+            {page.examAnswer && <details className="reference-answer">
+              <summary>Öva högt: förklara begreppet. Visa sedan ett kort tentasvar.</summary>
+              <p>{page.examAnswer}</p>
+            </details>}
+            {page.sources && <p className="muted">Läs mer: {page.sources.map((source, index) => <span key={source.url}>
+              {index > 0 && " · "}<a href={source.url} target="_blank" rel="noreferrer">{source.title}</a>
+            </span>)}</p>}
             {page.code && (
               <div className="theory-code-wrap">
                 <div className="theory-code-label">
@@ -801,25 +798,23 @@ export default function TopicsPage() {
                   <article className="study-focus-card">
                     <h3>Din uppgift</h3>
                     {page.codeTask.split("\n\n").map((part, index) => <p key={index}>{part}</p>)}
-                    <p className="muted">Kodexemplet visar grunden. För att lösa hela uppgiften behöver du också göra delen Tillämpa själv och kontrollera resultatet.</p>
-                    {page.guidance?.format !== "explanation" && <p className="muted">Editorn börjar med kodexemplet, eller ditt tidigare svar om ett sådant finns. Bygg vidare på koden med delen Tillämpa själv.</p>}
-                    {page.guidance && <div className="reference-answer">
-                      <strong>Kontrollera ditt resultat</strong>
+                    {page.guidance && getPageCodeGradeMode(page.id) !== "quiz" && <details key={page.id} className="reference-answer">
+                      <summary>Kontrollera ditt resultat</summary>
                       <ul>{page.guidance.checks.map(check => <li key={check}>{check}</li>)}</ul>
                       <p>{page.guidance.format === "files"
                         ? "Skriv separata filavsnitt med filnamn som i exemplet. Kommentarerna skapar inte riktiga filer."
                         : page.guidance.format === "explanation"
                           ? "Svara med egna ord och tillämpa resonemanget på uppgiftens nya situation. Ingen ny kod krävs."
                           : "Skriv det som uppgiften efterfrågar. Exemplet visar även omgivande kod; antagen setup behöver inte skrivas om."}</p>
-                    </div>}
+                    </details>}
 
                     {getPageCodeGradeMode(page.id) === "auto" ? (
                       <>
                         <p className="muted">
-                          Skriv TypeScript/TSX i editorn och tryck <strong>Rätta kod</strong>.
-                          Du får återkoppling på övningens kontroller. Hello-övningen körs och renderas; övriga sidövningar kontrollerar kodmönster. Testa även koden själv – 100% betyder att kontrollerna passerar, inte att hela programmet är verifierat.
+                          Gör ändringen och tryck <strong>Rätta kod</strong>. Testa även koden själv – rättningen kontrollerar bara delar av lösningen.
                         </p>
 
+                        {page.guidance?.format === "files" && <p className="muted">Separera filerna med kommentarer, till exempel // App.tsx. Varje fil rättas separat.</p>}
                         <div className="editor-shell polished-editor">
                           <Editor
                             key={`study-editor-${page.id}`}
@@ -831,7 +826,6 @@ export default function TopicsPage() {
                             value={code}
                             onChange={(value) => {
                               editCode(value ?? "");
-                              setCodeSaved(false);
                               setPageCodeGrade(null);
                               setPageCodeGradePageId(null);
                             }}
@@ -887,52 +881,7 @@ export default function TopicsPage() {
                         )}
                       </>
                     ) : (
-                      <>
-                        <p className="muted">
-                          Den här uppgiften självbedöms. Skriv ditt svar och jämför med
-                          bedömningsstödet innan du själv markerar försöket.
-                        </p>
-
-                        {page.guidance?.format === "code" ? (
-                          <Editor
-                            key={`study-editor-${page.id}`}
-                            height="280px"
-                            language="typescript"
-                            path={`study-${page.id}.tsx`}
-                            onMount={handleStudyEditorMount}
-                            theme="vs-dark"
-                            value={code}
-                            onChange={(value) => {
-                              editCode(value ?? "");
-                              setCodeSaved(false);
-                            }}
-                            options={{ minimap: { enabled: false }, fontSize: 14 }}
-                          />
-                        ) : <textarea
-                          className="page-self-answer"
-                          rows={8}
-                          value={code}
-                          onChange={(event) => {
-                            editCode(event.target.value);
-                            setCodeSaved(false);
-                          }}
-                          placeholder={page.guidance?.format === "files" ? "Skriv filnamn och kod i separata avsnitt..." : "Skriv din förklaring med egna ord..."}
-                        />}
-
-                        <div className="reference-answer page-self-guidance">
-                          <strong>Det ditt svar bör ta upp</strong>
-                          <p>{getSelfAssessmentGuidance(page.id)}</p>
-                        </div>
-
-                        <button
-                          type="button"
-                          className="primary-button auto-width"
-                          onClick={saveSelfAssessedPractice}
-                          disabled={code.trim().length === 0 || codeSaved}
-                        >
-                          {codeSaved ? "Självbedömning sparad ✓" : "Jag har jämfört mitt svar"}
-                        </button>
-                      </>
+                      <ApplicationPractice key={page.id} pageId={page.id} topic={selectedTopic.title} title={page.title} />
                     )}
                   </article>
                 )}

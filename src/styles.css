@@ -4974,3 +4974,24 @@ body.focus-mode .shortcut-hint {
 .monaco-editor .monaco-hover {
   z-index: 10000 !important;
 }
+.terminology-page { display: grid; gap: 1.25rem; }
+.terminology-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.terminology-subjects, .terminology-actions { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
+.terminology-subjects a { padding: .5rem .8rem; border: 1px solid currentColor; border-radius: .6rem; text-decoration: none; }
+.terminology-subjects a[aria-current="page"] { font-weight: 800; text-decoration: underline; text-underline-offset: .25rem; }
+.terminology-mode { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
+.terminology-mode select { max-width: 100%; }
+.terminology-glossary summary { cursor: pointer; font-weight: 700; }
+.terminology-glossary dl { display: grid; gap: 1rem; }
+.terminology-glossary dt { font-weight: 700; margin-bottom: .35rem; }
+.terminology-glossary dd { margin: 0; }
+.terminology-glossary dd p { margin: .4rem 0 0; }
+.lesson-flow { margin: 1.5rem 0; }
+.lesson-flow ol { list-style: none; padding: 0; display: flex; align-items: stretch; gap: 1.8rem; }
+.lesson-flow li { flex: 1; position: relative; padding: 1rem; border: 1px solid currentColor; border-radius: .6rem; }
+.lesson-flow li:not(:last-child)::after { content: "→"; position: absolute; right: -1.45rem; top: 50%; transform: translateY(-50%); }
+.lesson-flow figcaption { line-height: 1.6; }
+@media (max-width: 640px) {
+  .lesson-flow ol { flex-direction: column; }
+  .lesson-flow li:not(:last-child)::after { content: "↓"; top: auto; bottom: -1.65rem; left: 50%; right: auto; transform: none; }
+}

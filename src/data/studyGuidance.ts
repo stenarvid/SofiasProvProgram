@@ -14,6 +14,12 @@ const guide = (goal: string, prerequisites: string[], task: string, checks: [str
 // Each entry was reviewed against its worked example and all three page questions.
 // IDs also provide navigable prerequisite links; they are not completion gates.
 export const studyGuidance: Record<string, LessonGuidance> = {
+  "server-p5": guide("Förklara en reverse proxys roll och skilja den från forward proxy och redirect.", ["server-p1", "server-p2", "server-p3"],
+    "Följ requesten från webbläsare via reverse proxy till backend och svaret tillbaka. Beskriv vilken adress klienten känner till och varför en proxy kan vara användbar.",
+    ["Du placerar proxyn framför backend och låter svaret gå tillbaka genom den.", "Du skiljer vidarebefordran från redirect och kan ge ett användningsområde."], "explanation"),
+  "react-p5": guide("Förklara ett designsystem, ge tre exempel och återanvända gemensamma designvärden i React.", ["react-p2", "react-p3"],
+    "Skriv tokens, PrimaryButton och App som i exemplet. Visa knapparna Spara och Fortsätt med samma komponent. Förklara skillnaden mellan ett designsystem och ett komponentbibliotek och namnge Material Design, Carbon och Fluent 2 med deras React-bibliotek.",
+    ["Båda knapparna använder samma tokens och har olika text. Du kan ge tre exempel och förklara vad som ingår utöver komponentkod.", "Prova Tab och kontrollera synligt fokus på båda knapparna. Förklara varför tillgänglighet behöver kontrolleras även med ett bibliotek."]),
   "react-p1": guide("Förklara vad en komponent är och skilja definition från rendering.", [],
     "Skriv funktionen Hello som returnerar <h1>Hej!</h1>. Bara Hello behövs i svaret. Exemplet visar hur App använder den i ett befintligt React-projekt.",
     ["När Hello renderas syns en h1 med exakt Hej!.", "Förklara varför en funktion som aldrig används inte syns på sidan."]),
@@ -188,6 +194,6 @@ export const studyGuidance: Record<string, LessonGuidance> = {
 for (const [pageId, extension] of Object.entries(transferPractice)) {
   const guidance = studyGuidance[pageId];
   if (!guidance) throw new Error(`Missing lesson guidance: ${pageId}`);
-  guidance.task += `\n\nTillämpa själv (ingår i uppgiften): ${extension.task}`;
-  guidance.checks[1] += ` Ändringskontroll: ${extension.check}`;
+  guidance.task = `Tillämpa själv: ${extension.task}`;
+  guidance.checks = [extension.check, "Kontrollera att den befintliga koden fortfarande fungerar efter din ändring."];
 }

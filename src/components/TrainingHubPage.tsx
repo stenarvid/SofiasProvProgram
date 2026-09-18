@@ -1,6 +1,17 @@
 import { Link } from "react-router-dom";
+import { studyTopics } from "../data/studyTopics";
+import { terminology } from "../data/terminology";
 
 const groups = [
+  {
+    title: "Träna begrepp",
+    description: "Välj ämne och öva på begrepp och förklaringar med automatisk rättning. Efteråt kan du repetera dem du missade.",
+    items: studyTopics.map(topic => ({
+      to: `/terminology/${topic.slug}`,
+      title: topic.title,
+      text: `${terminology[topic.slug].length} begrepp · ${terminology[topic.slug].slice(0, 3).map(item => item.term).join(", ")} och fler.`
+    }))
+  },
   {
     title: "Skriv kod",
     description: "Praktiska övningar där du själv skriver lösningen.",

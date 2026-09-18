@@ -50,6 +50,7 @@ import SoundSettings from "./components/SoundSettings";
 import StudyFeedback from "./components/StudyFeedback";
 import CodeLibraryPage from "./components/CodeLibraryPage";
 import MissedQuestionsPage from "./components/MissedQuestionsPage";
+import TerminologyPage from "./components/TerminologyPage";
 
 export default function App() {
   return (
@@ -112,6 +113,8 @@ export default function App() {
           <Route path="/final-exam" element={<FinalExamPage />} />
           <Route path="/backup" element={<BackupPage />} />
           <Route path="/topics" element={<TopicsPage />} />
+          <Route path="/terminology" element={<TerminologyPage />} />
+          <Route path="/terminology/:topicSlug" element={<TerminologyPage />} />
           <Route path="/checkpoint/:topicSlug" element={<TopicCheckpointPage />} />
           <Route path="/smart-practice" element={<SmartPracticePage />} />
           <Route path="/oral-exam" element={<OralExamPage />} />

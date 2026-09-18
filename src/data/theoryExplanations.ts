@@ -5,6 +5,13 @@
 import { studyLessons } from "./studyLessons";
 
 export const theoryExplanations: Record<string, string[]> = {
+  "server-p5": [
+    "Tänk dig en reception framför flera avdelningar. Besökaren går till receptionen, som skickar ärendet till rätt avdelning och lämnar tillbaka svaret. En reverse proxy har en liknande roll framför backend-servrar: den tar emot klientens request och anropar den server som ska utföra arbetet.",
+    "Klienten behöver bara känna till den publika adressen. Proxyn kan exempelvis skicka /api/users till en användartjänst och /api/orders till en ordertjänst. Backend-adresserna kan ändras utan att klientens publika API-adress behöver ändras. Det kräver att routing och nätverk konfigureras rätt; React eller fetch skapar inte proxyn åt dig.",
+    "En reverse proxy kan hantera HTTPS-certifikat och avsluta klientens TLS-förbindelse. Den kan även lastbalansera, alltså fördela anrop mellan flera backend-instanser, eller cachelagra lämpliga svar. Funktionerna beror på konfigurationen och behöver inte alla finnas. Att proxy används innebär inte att backendens datavalidering eller behörighetskontroll kan tas bort.",
+    "Skillnaden mot forward proxy handlar om vem mellanhanden företräder. En forward proxy används för klienters anrop till andra tjänster, exempelvis i ett företagsnät. En reverse proxy är tjänstens ingång framför dess servrar. En redirect är något annat: servern svarar med en hänvisning så att webbläsaren gör ett nytt anrop till den angivna adressen.",
+    "I exemplet ligger både React-sidan och API-adressen under https://app.example.test. Webbläsaren anropar samma origin, även om proxyn använder en annan adress internt. Det kan förenkla frontendens API-anrop. Proxyn är dock ingen generell avstängning av webbläsarens CORS-regler för andra adresser."
+  ],
   "react-p1": [
     "React hjälper dig bygga ett gränssnitt genom att dela upp sidan i små delar som kallas komponenter. En komponent är vanligtvis en JavaScript- eller TypeScript-funktion som returnerar JSX, alltså beskrivningen av vad som ska visas på sidan.",
     "I exemplet `function Hello() { return <h1>Hej!</h1>; }` är `Hello` själva React-komponenten. Funktionen returnerar ett `h1`-element. För att visa komponenten från en annan komponent skriver du `<Hello />`. Det är därför komponentnamn börjar med stor bokstav: React kan då skilja `Hello` från vanliga HTML-element som `div` och `button`.",
@@ -288,6 +295,13 @@ export const theoryExplanations: Record<string, string[]> = {
     "Till sist sparas datan kanske i React-state och UI:t renderas om. Att kunna följa den kedjan från klick till server och tillbaka är en av de viktigaste sakerna att förstå i en webbapp.",
   ],
 };
+
+theoryExplanations["react-p5"] = [
+  "Ett designsystem är en gemensam grund för hur en produkt ser ut och fungerar. Det innehåller principer, design tokens, komponenter och dokumentation om när delarna ska användas. Ett komponentbibliotek innehåller de återanvändbara koddelarna, men räcker inte ensamt för att beskriva alla designbeslut.",
+  "Material Design, Carbon och Fluent 2 är tre konkreta exempel. Material UI implementerar Material Design i React, Carbon har @carbon/react och Fluent 2 används med Fluent UI React v9. Du kan jämföra deras knappar, formulärfält, teman och dokumentation när du undersöker hur samma gränssnitt kan byggas med olika system.",
+  "React sköter komponenter och rendering; designsystemet hjälper dig välja konsekvent utseende och beteende. Gemensamma tokens gör att en ändring kan slå igenom på många ställen. Kontrollera också tangentbordsnavigation, synligt fokus och tydliga etiketter. Ett bibliotek gör inte automatiskt hela sidan tillgänglig.",
+  "Officiell dokumentation: Material UI – https://mui.com/material-ui/ ; Carbon React – https://carbondesignsystem.com/developing/frameworks/react/ ; Fluent 2 React – https://fluent2.microsoft.design/components/web/react ."
+];
 
 export function getTheoryExplanation(pageId: string, fallback: string) {
   return theoryExplanations[pageId] ?? [fallback];

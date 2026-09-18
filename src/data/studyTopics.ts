@@ -35,6 +35,9 @@ export type StudyPage = {
   cheat: string[];
   codeTask: string;
   guidance?: LessonGuidance;
+  flow?: { steps: string[]; caption: string };
+  examAnswer?: string;
+  sources?: { title: string; url: string }[];
 };
 
 export type StudyTopic = {
@@ -49,7 +52,7 @@ export const studyTopics: StudyTopic[] = [
 {
       slug: "react",
       title: "React",
-      summary: "Komponenter, JSX och rendering.",
+      summary: "Komponenter, JSX, rendering och designsystem.",
       pages: [
         {
           id: "react-p1",
@@ -79,6 +82,19 @@ export const studyTopics: StudyTopic[] = [
           bullets: ["Returnera namn, titel och knapp i ett gemensamt element.", "Skapa knappen med <button type=\"button\">Visa profil</button>.", "Koppla klicket med onClick={handleClick}, utan att anropa funktionen direkt.", "Visa komponenten genom att skriva <Profile /> i App.", "Använd className för CSS-klasser och stor bokstav för egna komponenter."],
           ...getLessonPageContent("react-p4"),
           cheat: ["<button>Text</button> visar en knapp", "onClick={handleClick} kör funktionen vid klick", "<Profile /> visar profilen i App", "return behövs och komponentnamn börjar med stor bokstav", "className kopplar till en CSS-klass"],
+        },{
+          id: "react-p5",
+          title: "Designsystem för React",
+          intro: "Ett designsystem samlar designregler, gemensamma värden, återanvändbara komponenter och dokumentation så att en produkt känns enhetlig.",
+          bullets: [
+            "Design tokens är namngivna värden för exempelvis färger, avstånd och typografi. Ett komponentbibliotek är kod-delen av ett större designsystem.",
+            "Material Design från Google: Material UI (MUI) är ett React-bibliotek som implementerar Material Design. Exempel på byggblock är Button och TextField.",
+            "Carbon från IBM: designsystem med React-komponenter i @carbon/react, exempelvis Button och DataTable.",
+            "Fluent 2 från Microsoft: designsystem med React-komponenter i Fluent UI React v9, exempelvis Button och Input.",
+            "Gemensamma komponenter och teman ger enhetlighet. Kontrollera ändå tangentbord, fokus, kontrast och begripliga etiketter i den färdiga sidan."
+          ],
+          ...getLessonPageContent("react-p5"),
+          cheat: ["Designsystem = regler + tokens + komponenter + dokumentation", "Tre exempel: Material Design, Carbon och Fluent 2", "React-bibliotek: Material UI, Carbon React och Fluent UI", "Återanvänd en komponent och ändra gemensamma tokens centralt"],
         }
       ]
     },
@@ -547,6 +563,29 @@ export const studyTopics: StudyTopic[] = [
           bullets: ["Event i React triggar fetch.", "Server route matchas.", "Server skapar response.", "Frontend uppdaterar state/UI."],
           ...getLessonPageContent("server-p4"),
           cheat: ["UI event", "Request", "Route", "Response", "State/render"],
+        },{
+          id: "server-p5",
+          title: "Reverse proxy",
+          intro: "En reverse proxy är en server framför en eller flera backend-servrar. Den tar emot klientens anrop, skickar dem vidare och lämnar svaret tillbaka till klienten.",
+          bullets: [
+            "Klienten anropar den publika adressen. Reverse proxyn väljer vilken backend som ska hantera anropet.",
+            "Svaret går tillbaka via proxyn. Klienten behöver inte känna till backendens interna adress.",
+            "En reverse proxy företräder servrarna; en forward proxy företräder klienterna när de anropar andra tjänster.",
+            "Vanliga användningar är routing till olika backends, TLS-terminering och lastbalansering. Cache kan också konfigureras.",
+            "En redirect ber webbläsaren anropa en annan adress. En reverse proxy vidarebefordrar normalt anropet själv.",
+            "Proxyn ersätter inte backendens validering eller behörighetskontroll. Dessa behöver fortfarande utföras."
+          ],
+          ...getLessonPageContent("server-p5"),
+          cheat: ["Klient → reverse proxy → backend", "Svaret går tillbaka via proxyn", "Reverse proxy företräder servern; forward proxy företräder klienten", "TLS, routing, lastbalansering och eventuell cache"],
+          flow: {
+            steps: ["Webbläsare · GET /api/users", "Reverse proxy · app.example.test:443", "Backend · internt på port 3000"],
+            caption: "Requesten följer stegen: webbläsare → reverse proxy → backend. Backendens JSON-svar går tillbaka via proxyn till webbläsaren. Exemplet behåller sökvägen /api/users."
+          },
+          examAnswer: "En reverse proxy är en mellanhand framför en eller flera backend-servrar. Klienten anropar proxyn, som skickar anropet till rätt backend och returnerar svaret till klienten. Den kan till exempel hantera HTTPS och fördela trafik mellan servrar. En forward proxy företräder i stället klienten.",
+          sources: [
+            { title: "NGINX: reverse proxy", url: "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy" },
+            { title: "Cloudflare: reverse proxy och forward proxy", url: "https://www.cloudflare.com/learning/cdn/glossary/reverse-proxy/" }
+          ],
         }
       ]
     }
