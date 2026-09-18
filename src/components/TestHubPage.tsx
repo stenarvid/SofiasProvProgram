@@ -11,7 +11,7 @@ const tests = [
     to: "/quiz",
     title: "Quiz",
     tag: "Teori",
-    text: "Välj ämnen och antal frågor. Svaga områden prioriteras automatiskt."
+    text: "Svara på flervalsfrågor med automatisk rättning – utan att skriva kod. Välj ämnen och antal frågor."
   },
   {
     to: "/exam",

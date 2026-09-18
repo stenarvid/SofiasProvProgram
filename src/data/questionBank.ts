@@ -1,5 +1,6 @@
 import { studyTopics } from "./studyTopics";
 import { studyLessons } from "./studyLessons";
+import { createTerminologyQuestions } from "./terminology";
 
 export type QuizQuestion = {
   id: string;
@@ -8,6 +9,8 @@ export type QuizQuestion = {
   options: string[];
   answer: number;
   explanation: string;
+  pageId?: string;
+  category?: "terminology";
 };
 
 const foundationQuestions: QuizQuestion[] = [
@@ -76,11 +79,19 @@ export const questionBank: QuizQuestion[] = [
   ...studyTopics.flatMap(topic => topic.pages.flatMap(page =>
     (studyLessons[page.id]?.questions ?? []).map(([question, correct, ...rest], index) => ({
       id: `applied-${page.id}-${index + 1}`,
+      pageId: page.id,
       topic: topic.title,
       question: `${question}\n\n${studyLessons[page.id].code}`,
       options: [correct, ...rest.slice(0, 3)],
       answer: 0,
       explanation: rest[3]
+    }))
+  )),
+  ...studyTopics.flatMap(topic => (["term", "definition"] as const).flatMap(direction =>
+    createTerminologyQuestions(topic.slug, direction, () => 0.5).map(question => ({
+      id: question.id, topic: topic.title, question: question.question,
+      options: question.options, answer: question.answer, explanation: question.explanation,
+      category: "terminology" as const
     }))
   ))
 ];

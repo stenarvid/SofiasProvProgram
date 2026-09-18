@@ -2,6 +2,7 @@ import { shuffleQuestionOptions } from "../data/quizShuffle";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { questionBank, type QuizQuestion } from "../data/questionBank";
+import { studyTopics } from "../data/studyTopics";
 import { getProgress, recordAnswer } from "../data/progress";
 import { saveTestResult } from "../data/history";
 import {
@@ -57,7 +58,7 @@ export default function QuizPage() {
   const topicParam = searchParams.get("topic");
 
   const allTopics = useMemo(
-    () => Array.from(new Set(questionBank.map((q) => q.topic))).sort(),
+    () => studyTopics.map(topic => topic.title),
     []
   );
 
@@ -65,6 +66,7 @@ export default function QuizPage() {
     topicParam && allTopics.includes(topicParam) ? [topicParam] : allTopics
   );
   const [selectedAmount, setSelectedAmount] = useState(10);
+  const [focus, setFocus] = useState("");
   const [testId, setTestId] = useState(0);
   const [started, setStarted] = useState(wrongOnly || reviewOnly);
 
@@ -80,8 +82,9 @@ export default function QuizPage() {
       return questionBank.filter((q) => dueIds.includes(q.id));
     }
 
-    return questionBank.filter((q) => selectedTopics.includes(q.topic));
-  }, [selectedTopics, wrongOnly, reviewOnly, wrongIds, dueIds]);
+    return questionBank.filter(q => selectedTopics.includes(q.topic) &&
+      (!focus || (focus === "terminology" ? q.category === "terminology" : q.pageId === focus)));
+  }, [selectedTopics, focus, wrongOnly, reviewOnly, wrongIds, dueIds]);
 
   const actualAmount = wrongOnly || reviewOnly
     ? filteredPool.length
@@ -89,7 +92,7 @@ export default function QuizPage() {
 
   const questions = useMemo(
     () => weightedRandomQuestions(filteredPool, actualAmount),
-    [testId, actualAmount, selectedTopics.join("|"), wrongOnly, reviewOnly]
+    [testId, actualAmount, filteredPool]
   );
 
   const [index, setIndex] = useState(0);
@@ -121,6 +124,7 @@ export default function QuizPage() {
   }
 
   function toggleTopic(topic: string) {
+    setFocus("");
     setSelectedTopics((currentTopics) =>
       currentTopics.includes(topic)
         ? currentTopics.filter((t) => t !== topic)
@@ -205,28 +209,41 @@ export default function QuizPage() {
             Välj ämnen och antal frågor. Systemet väger automatiskt upp
             ämnen och enskilda frågor som du tidigare haft svårt med.
           </p>
+          <p>Alla {allTopics.length} ämnen ingår, med teori- och begreppsfrågor. Designsystem finns under React och reverse proxy under Server. Välj ett delområde nedan om du vill fokusera på en viss sida.</p>
 
           <div className="topic-filter-grid">
             {allTopics.map((topic) => (
               <label key={topic} className="topic-filter-item">
                 <input
                   type="checkbox"
+                  aria-label={topic}
                   checked={selectedTopics.includes(topic)}
                   onChange={() => toggleTopic(topic)}
                 />
-                {topic}
+                {topic} ({questionBank.filter(question => question.topic === topic).length} frågor)
               </label>
             ))}
           </div>
 
           <div className="topic-filter-actions">
-            <button type="button" onClick={() => setSelectedTopics(allTopics)}>
+            <button type="button" onClick={() => { setSelectedTopics(allTopics); setFocus(""); }}>
               Välj alla
             </button>
-            <button type="button" onClick={() => setSelectedTopics([])}>
+            <button type="button" onClick={() => { setSelectedTopics([]); setFocus(""); }}>
               Rensa
             </button>
           </div>
+
+          <label className="quiz-select-label" htmlFor="quiz-focus">
+            Delområde
+            <select id="quiz-focus" value={focus} onChange={event => setFocus(event.target.value)} disabled={selectedTopics.length === 0}>
+              <option value="">Alla delar i valda ämnen</option>
+              <option value="terminology">Bara terminologi – begrepp och förklaringar</option>
+              {studyTopics.filter(topic => selectedTopics.includes(topic.title)).map(topic => <optgroup key={topic.slug} label={topic.title}>
+                {topic.pages.map(page => <option key={page.id} value={page.id}>{page.title}</option>)}
+              </optgroup>)}
+            </select>
+          </label>
 
           <label className="quiz-select-label">
             Antal frågor
@@ -241,7 +258,7 @@ export default function QuizPage() {
           </label>
 
           <p className="muted">
-            {filteredPool.length} frågor tillgängliga i valda ämnen.
+            {filteredPool.length} frågor tillgängliga med dina val. Testet innehåller {actualAmount} frågor.
           </p>
 
           <button

@@ -4,6 +4,13 @@ import { terminology } from "../data/terminology";
 
 const groups = [
   {
+    title: "Quiz – svara på frågor",
+    description: "Välj svarsalternativ och få automatisk rättning. Du behöver inte skriva någon kod; vissa frågor visar kod att läsa.",
+    items: [
+      { to: "/quiz", title: "Starta quiz", text: "Välj ämnen och antal frågor. Se rätt svar och förklaringar efter rättning." }
+    ]
+  },
+  {
     title: "Träna begrepp",
     description: "Välj ämne och öva på begrepp och förklaringar med automatisk rättning. Efteråt kan du repetera dem du missade.",
     items: studyTopics.map(topic => ({

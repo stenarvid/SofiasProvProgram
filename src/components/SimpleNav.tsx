@@ -4,6 +4,7 @@ const items = [
   { to: "/", label: "Start", icon: "⌂", end: true },
   { to: "/topics", label: "Lär dig", icon: "▤" },
   { to: "/train", label: "Träna", icon: "⌨" },
+  { to: "/quiz", label: "Quiz", icon: "?" },
   { to: "/test", label: "Testa dig", icon: "✓" },
   { to: "/progress-hub", label: "Progress", icon: "↗" }
 ];
